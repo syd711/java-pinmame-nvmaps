@@ -1,26 +1,36 @@
 package net.nvrams.util;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
  * Generates rom-missing-tomlogic.md from rom-overview.md.
  *
  * Includes all ROMs that have an 'x' in the pinemHi column but not in the
- * tomslogic column, and adds an "nvram available" column indicating whether
- * a matching .nv file exists in the nvrams/ folder.
+ * tomslogic column, AND are not listed in the tomlogic GitHub maplist, and
+ * adds an "nvram available" column indicating whether a matching .nv file
+ * exists in the nvrams/ folder.
  *
  * rom-overview.md columns (pipe-separated):
  *   # | rom | Name | clone of | pinemHi | tomslogic | superhac
  *   0   1     2      3          4         5            6        (1-based pipe-split index)
  */
 public class RomMissingTomslogicGenerator {
+
+    private static final String TOMSLOGIC_MAPLIST_URL =
+            "https://raw.githubusercontent.com/tomlogic/pinmame-nvram-maps/refs/heads/main/maplist.md";
 
     // Column indices in the pipe-split array (0 = leading empty before first |)
     private static final int COL_ROM      = 2;
@@ -41,6 +51,7 @@ public class RomMissingTomslogicGenerator {
         Path outputFile   = projectRoot.resolve("rom-missing-tomlogic.md");
 
         Set<String> nvFiles = collectNvFiles(nvramDir);
+        Set<String> tomslogicMapRoms = fetchTomslogicMapRoms(TOMSLOGIC_MAPLIST_URL);
         List<String> inputLines = Files.readAllLines(overviewFile);
 
         List<String> output = new ArrayList<>();
@@ -74,13 +85,13 @@ public class RomMissingTomslogicGenerator {
 
             String pinemhi   = parts[COL_PINEMHI].trim();
             String tomslogic = parts[COL_TOMSLOGIC].trim();
+            String rom = parts[COL_ROM].trim().toLowerCase();
 
-            if (!pinemhi.equals("x") || tomslogic.equals("x")) {
+            if (!pinemhi.equals("x") || tomslogic.equals("x") || tomslogicMapRoms.contains(rom)) {
                 continue;
             }
 
             parts[1] = " " + (++rowIndex) + " ";
-            String rom = parts[COL_ROM].trim().toLowerCase();
             String nvramValue = nvFiles.contains(rom) ? " x " : "  ";
             if (nvramValue.trim().equals("x"))   colCounts[0]++;
             if (pinemhi.equals("x"))             colCounts[1]++;
@@ -97,6 +108,27 @@ public class RomMissingTomslogicGenerator {
 
         Files.write(outputFile, output);
         System.out.println("Written " + (output.size() - 5) + " ROMs to " + outputFile);
+    }
+
+    /**
+     * Fetches the tomlogic maplist.md and returns the set of ROM names found in it.
+     * ROM names appear as markdown italic: _romname_ at the end of each list entry.
+     */
+    private static Set<String> fetchTomslogicMapRoms(String url) throws IOException {
+        Set<String> roms = new HashSet<>();
+        Pattern pattern = Pattern.compile("_([a-z0-9_]+)_\\s*$");
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(URI.create(url).toURL().openStream()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                Matcher m = pattern.matcher(line.trim().toLowerCase());
+                if (m.find()) {
+                    roms.add(m.group(1));
+                }
+            }
+        }
+        System.out.println("Fetched " + roms.size() + " ROM names from tomlogic maplist.");
+        return roms;
     }
 
     private static Set<String> collectNvFiles(Path nvramDir) throws IOException {
