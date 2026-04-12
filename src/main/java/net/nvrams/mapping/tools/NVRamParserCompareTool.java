@@ -7,6 +7,7 @@ import net.nvrams.mapping.superhac.NVRamMapSuperhacParser;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +23,7 @@ public class NVRamParserCompareTool {
     Map<String, String> roms = VPXUtil.getRomnames(mameFolder);
     Map<String, String> clones = VPXUtil.getClones(mameFolder);
 
-    NVRamMapParser parser = new NVRamMapParser();
+    NVRamMapParser parser = new NVRamMapParser(new File("maps"));
     List<String> supportedNVRams = parser.getSupportedNVRams();
 
     NVRamPinemhiParser pinemhi = new NVRamPinemhiParser();
@@ -31,9 +32,9 @@ public class NVRamParserCompareTool {
     NVRamMapSuperhacParser superhac = new NVRamMapSuperhacParser();
     List<String> supportedbySuperhac = superhac.getSupportedNVRams();
 
+    File nvramsFolder = new File("nvrams");
+
     File[] testFolders = new File[] { 
-      new File("./testsystem/vPinball/VisualPinball/VPinMAME/nvram/"),
-      new File("C:/Github/py-pinmame-nvmaps/test/nvram"),
       new File("C:/temp/_NVRAMS/Matt"),
       new File("C:/temp/_NVRAMS/ed209"),
       new File("C:/temp/_NVRAMS/YabbaDabbaDoo"),
@@ -43,13 +44,14 @@ public class NVRamParserCompareTool {
       new File("C:/temp/_NVRAMS/BostonBuckeye"),
       new File("C:/temp/_NVRAMS/FuFu"),
       new File("C:/temp/_NVRAMS/Blap"),
+      new File("C:/Github/py-pinmame-nvmaps/test/nvram"),
       new File("C:/Visual Pinball/VPinMAME/nvram"),         // OLE
-      new File("./resources/nvrams")    // resetted nvrams
+      new File("C:/Github/vpin-studio/testsystem/vPinball/VisualPinball/VPinMAME/nvram/"),
+      new File("C:/Github/vpin-studio/resources/nvrams")    // resetted nvrams
     };
 
     try (PrintWriter w = new PrintWriter("allroms.csv")) {
-      w.println("\"rom\",\"Name\",\"clone of\",\"pinemHi\",\"tomslogic\",\"superhac\",\"nvs\"");
-      w.println("-------------------------------------");
+      w.println("\"rom\",\"Name\",\"clone of\",\"pinemHi\",\"tomslogic\",\"superhac\",\"nvrams\"");
       for (String s : roms.keySet()) {
 
         w.print(s + ",");
@@ -62,14 +64,25 @@ public class NVRamParserCompareTool {
         w.print((supportedNVRams.contains(s) ? "x": "") + ",");
         w.print((supportedbySuperhac.contains(s) ? "x": "") + ",");
 
-        String paths = null;
-        for (File folder : testFolders) {
-          File entry = new File(folder, s + ".nv");
-          if (entry.exists()) {
-            paths = (paths != null? paths + ", ": "") + entry.getAbsolutePath();
+        File nvram = new File(nvramsFolder, s + ".nv");
+        boolean nvramExists = nvram.exists();
+        if (nvramExists) {
+          w.println("OK");
+        } else {
+          boolean copied = false;
+          for (File folder : testFolders) {
+            File entry = new File(folder, s + ".nv");
+            if (entry.exists()) {
+              Files.copy(entry.toPath(), nvram.toPath());
+              w.println("COPIED");
+              copied = true;
+              break;
+            }
+          }
+          if (!copied) {
+            w.println("KO!!");
           }
         }
-        w.println(paths != null ? paths: "");
       }
     }
   }

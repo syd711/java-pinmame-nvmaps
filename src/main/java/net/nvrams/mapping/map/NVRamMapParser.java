@@ -110,28 +110,43 @@ public class NVRamMapParser implements NVRamParser {
 
     StringBuilder raw = new StringBuilder();
 
-    List<NVRamScore> scoreDefs = mapJson.getHighScores();
+    getScoresRaw(memory, raw, mapJson.getHighScores(), locale);
+    getScoresRaw(memory, raw, mapJson.getModeChampions(), locale);
+
+    return raw.toString();
+  }
+
+  private void getScoresRaw(SparseMemory memory, StringBuilder raw, List<NVRamScore> scoreDefs, Locale locale) {
     if (scoreDefs != null) {
       int position = 1;
       String currentLabel = null;
       for (NVRamScore score : scoreDefs) {
         String lbl = score.formatLabel(false);
+        lbl = normalize(lbl);
         if (!StringUtils.equals(currentLabel, lbl)) {
           if (raw.length() > 0) {
             raw.append("\n");
           }
-          raw.append(lbl).append("\n");
+          raw.append(lbl.toUpperCase(locale)).append("\n");
+          currentLabel = lbl;
         }
 
-        raw.append(position++).append (" ").append(score.formatHighScore(memory, locale));
+        raw.append(position++).append (") ").append(score.formatHighScore(memory, locale)).append("\n");
       }
     }
-    return raw.toString();
   }
 
+  private String normalize(String lbl) {
+    if (StringUtils.containsIgnoreCase(lbl, " PLACE")) {
+      return "HIGHEST SCORES";
+    }
+    if (StringUtils.containsIgnoreCase(lbl, "BUY-IN ")) {
+      return "BUY-IN HIGHEST SCORES";
+    }
+    return lbl;
+  }
 
   //--------------------------
-
   private void initMap(NVRamMap mapJson) throws IOException {
     NVRamMetadata metadata = mapJson.getMetadata();
     if (metadata == null) {

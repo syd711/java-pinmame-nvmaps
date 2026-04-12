@@ -28,7 +28,7 @@ public class VPXUtil {
       List<String> commands = Arrays.asList(VPX_TOOL_EXE, "extractvbs", vpxFilePath);
       LOG.info("VBS Export CMD: {}", String.join(" ", commands));
 
-      execute(commands);
+      execute(commands, new File("tools"));
 
       String script = org.apache.commons.io.FileUtils.readFileToString(vbsFile, Charset.defaultCharset());
       if (!keepVbsFile && !vbsFile.delete()) {
@@ -55,10 +55,10 @@ public class VPXUtil {
     try {
       File mameExe = new File(mameFolder, "PinMAME.exe");
       if (mameExe.exists()) {
-        List<String> cmds = Arrays.asList(mameExe.getName(), option);
+        List<String> cmds = Arrays.asList("cmd.exe", "/c", mameExe.getName(), option);
         LOG.info("Executing ROM validation: {}", String.join(" ", cmds));
 
-        List<String> result = execute(cmds);
+        List<String> result = execute(cmds, mameFolder);
         for (String s : result) {
           int pos1 = s.indexOf('"');
           int pos2 = s.indexOf(' ');
@@ -75,9 +75,9 @@ public class VPXUtil {
     return roms;
   }
   
-  private static List<String> execute(List<String> commands) throws IOException, InterruptedException {
+  private static List<String> execute(List<String> commands, File dir) throws IOException, InterruptedException {
     ProcessBuilder pb = new ProcessBuilder(commands)
-      .directory(new File("tools"))
+      .directory(dir)
       .redirectErrorStream(true);
     Process process = pb.start();
 

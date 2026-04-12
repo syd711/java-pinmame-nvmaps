@@ -29,7 +29,7 @@ public class NVRamMapSuperhacParser implements NVRamParser {
   private final static Logger LOG = LoggerFactory.getLogger(NVRamMapSuperhacParser.class);
 
   // the root where map file can be downloaded
-  public String mapRoot = "https://github.com/superhac/pinmame-score-parser/releases/download/v1.0.0/roms.json";
+  public String mapRoot = "https://github.com/superhac/pinmame-score-parser/releases/download/v1.0.2/roms.json";
 
   private Map<String, ?> _cacheMapForRom;
 
