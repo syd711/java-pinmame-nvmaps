@@ -93,7 +93,11 @@ public class NVRamScore extends NVRamObject {
   }
   
   public String formatInitials(SparseMemory memory, Locale locale) {
-    return initials != null? initials.formatEntry(memory, locale) : "???";
+    String lbl = initials != null? initials.formatEntry(memory, locale) : null;
+    if (StringUtils.isBlank(lbl)) {
+      return "???";
+    }
+    return StringUtils.rightPad(lbl.trim(), 3);
   }
 
   public String formatLabel(boolean useShortLabel) {

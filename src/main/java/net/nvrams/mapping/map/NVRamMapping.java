@@ -556,7 +556,9 @@ public class NVRamMapping extends NVRamObject {
           result.append((char) bInt);
         }
       }
-      if (result.toString().equals(defaultVal)) return null;
+      if (result.toString().equals(defaultVal)) {
+        return null;
+      }
       return result.toString();
     } 
     else if ("raw".equals(encoding)) {

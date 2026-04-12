@@ -31,6 +31,12 @@ public class NVRamPinemhiParser implements NVRamParser {
 
   private File vpPathAdjusted = null;
 
+  private List<String> titles = List.of("MASTER MAGICIAN", "CHAMPION", "GRAND CHAMPION", "WORLD RECORD", "GREATEST VAMPIRE HUNTER", "GREATEST TIME LORD", "RIVER MASTER", "CLUB CHAMPION", "HIGHEST SCORES", "HIGHEST SCORE", "THE BEST DUDE", "ACE WINGER",
+    // to be added in ScoringDB.json....
+    // che_cho
+       "ROAD-TRIP KING"
+  );
+
 
   @Override
   public List<String> getSupportedNVRams() throws IOException {
@@ -42,9 +48,9 @@ public class NVRamPinemhiParser implements NVRamParser {
 
   @Nullable
   @Override
-  public List<Score> parseNvRam(@NonNull File nvRam, Locale locale) throws IOException {
+  public List<Score> parseNvRam(@NonNull File nvRam, Locale locale, boolean parseAll) throws IOException {
     List<String> lines = getLines(nvRam);
-    return convertOutputToRaw(lines);
+    return convertOutputToRaw(lines, parseAll);
   }
 
  @Override
@@ -137,7 +143,7 @@ public class NVRamPinemhiParser implements NVRamParser {
         // cache latest adjusted path for optimisation
         vpPathAdjusted = nvRamFolder;
       }
-      catch (Exception e) {
+        catch (Exception e) {
         LOG.error("Failed to update VP path in pinemhi.ini: {}", e.getMessage(), e);
       }
     }
@@ -163,7 +169,7 @@ public class NVRamPinemhiParser implements NVRamParser {
 
 
   @NonNull
-  private List<Score> convertOutputToRaw(List<String> lines) throws IOException {
+  private List<Score> convertOutputToRaw(List<String> lines, boolean parseAll) throws IOException {
     try {
       List<Score> scores = new ArrayList<>();
 
@@ -171,7 +177,7 @@ public class NVRamPinemhiParser implements NVRamParser {
       String currentSuffix = null;
       Score currentScore = null;
       for (int i = 0; i < lines.size(); i++) {
-        String line = lines.get(i).trim();
+         String line = lines.get(i).trim();
       	if (StringUtils.isEmpty(line)) {
           if (currentSuffix != null && currentScore != null) {
             currentScore.setSuffix(currentSuffix);
@@ -180,19 +186,24 @@ public class NVRamPinemhiParser implements NVRamParser {
         	currentTitle = null;
           currentSuffix = null;
           currentScore = null;
+        	if (scores.size() >= 3 && !parseAll) {
+            	break;
+        	}
           continue;
       	}
 
-        if (isScoreLine(line)) {
+        if (currentTitle != null && isScoreLine(line)) {
           currentScore = createScore(currentTitle, line);
           if (currentScore != null) {
             scores.add(currentScore);
           }
         }
-        else if (isTitleScoreLine(line)) {
-          currentScore = createTitledScore(currentTitle, line);
-          if (currentScore != null) {
-            scores.add(currentScore);
+        else if (currentTitle != null && isTitleScoreLine(line)) {
+          if (parseAll || titles.contains(currentTitle)) {
+	          currentScore = createTitledScore(currentTitle, line);
+          	if (currentScore != null) {
+            	scores.add(currentScore);
+          	}
           }
         }
         else if (StringUtils.isNotEmpty(line)) {
@@ -216,20 +227,21 @@ public class NVRamPinemhiParser implements NVRamParser {
 
   //-------------------------
 
-  private static final String _patternIndex = "(\\d+\\)|#\\d+|\\d+#|\\d+\\.:) +";
-  private static final String _patternScore = "(.{3})?(\\s+-)?(\\s+(\\d\\d?\\d?(?:[., ?\u00a0\u202f\ufffd\u00ff]?\\d\\d\\d)*(\\.\\d)?)((\\s?[a-zA-Z]+)*))+$";
+  private static final String _patternIndex = "(\\d+\\)|#\\d+|\\d+#|\\d+\\.:)";
+  private static final String _patternScore = "(\\s+.{3,})?(\\s+-)?(\\s+(\\d\\d?\\d?(?:[., ?\u00a0\u202f\ufffd\u00ff]?\\d\\d\\d)*(\\.\\d)?)((\\s?[a-zA-Z]+)*))+$";
 
   private static final Pattern patternScoreLine = Pattern.compile(_patternIndex + _patternScore);
   private static final Pattern patternScoreTitle = Pattern.compile(_patternScore);
 
 
   public boolean isTitleScoreLine(String line) {
-    Matcher m = patternScoreTitle.matcher(line);
+    // the space is needed to match line like "100,000", else does not interfere 
+    Matcher m = patternScoreTitle.matcher(" " + line);
     return m.find();
   }
 
   public boolean isScoreLine(String line) {
-    Matcher m = patternScoreLine.matcher(line);
+    Matcher m = patternScoreLine.matcher(" " + line);
     return m.find();
   }
 
@@ -239,7 +251,8 @@ public class NVRamPinemhiParser implements NVRamParser {
    */
   @Nullable
   protected Score createTitledScore(@Nullable String title, @NonNull String line) {
-    Matcher m = patternScoreTitle.matcher(line);
+    // the space is needed to match line like "100,000", else does not interfere 
+    Matcher m = patternScoreTitle.matcher(" " + line);
     if (m.find()) {
       String initials = m.group(1);
       if (StringUtils.isEmpty(initials)) {

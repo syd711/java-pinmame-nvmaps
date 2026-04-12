@@ -85,7 +85,7 @@ public class NVRamMapSuperhacParser implements NVRamParser {
   }
 
   @Override
-  public List<Score> parseNvRam(File nvRam, Locale locale) throws IOException {
+  public List<Score> parseNvRam(File nvRam, Locale locale, boolean parseAll) throws IOException {
     throw new UnsupportedOperationException("Unimplemented method 'parseNvRam'");
   }
 

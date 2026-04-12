@@ -424,7 +424,7 @@ public class NVRamToolDecoder {
         String raw = pinemhiParser.getRaw(nvramFile, locale);
         LOG.warn("\n" + raw);
       }
-      List<Score> scores = pinemhiParser.parseNvRam(nvramFile, locale);
+      List<Score> scores = pinemhiParser.parseNvRam(nvramFile, locale, true);
       return scores;
     }
     catch (IOException ioe) {

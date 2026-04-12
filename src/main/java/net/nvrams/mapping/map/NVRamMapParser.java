@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -78,7 +79,7 @@ public class NVRamMapParser implements NVRamParser {
   }
   
   @Override
-  public List<Score> parseNvRam(File nvRam, Locale locale) throws IOException {
+  public List<Score> parseNvRam(File nvRam, Locale locale, boolean parseAll) throws IOException {
     String rom = romFromNv(nvRam);
     NVRamMap mapJson = getMap(rom);
     byte[] data = Files.readAllBytes(nvRam.toPath());
@@ -90,15 +91,22 @@ public class NVRamMapParser implements NVRamParser {
       int position = 1;
       for (NVRamScore score : scoreDefs) {
         String lbl = score.formatLabel(false);
-        String initials = score.formatInitials(memory, locale);
-        Long value = score.getValue(memory);
-        String raw = score.formatHighScore(memory, locale);
-        Score sc = new Score(initials, raw, value, position++);
-        sc.setLabel(lbl);
-        scores.add(sc);
+        if (parseAll || filter(lbl)) {
+          String initials = score.formatInitials(memory, locale);
+          Long value = score.getValue(memory);
+          String raw = score.formatHighScore(memory, locale);
+          Score sc = new Score(initials, raw, value, position++);
+          sc.setLabel(lbl);
+          scores.add(sc);
+        }
       }
     }
     return scores;
+  }
+
+  private boolean filter(String lbl) {
+    return !StringUtils.containsIgnoreCase(lbl, "BUY-IN")
+        && !StringUtils.containsIgnoreCase(lbl, "BUYIN");
   }
 
   @Override
@@ -122,12 +130,12 @@ public class NVRamMapParser implements NVRamParser {
       String currentLabel = null;
       for (NVRamScore score : scoreDefs) {
         String lbl = score.formatLabel(false);
-        lbl = normalize(lbl);
+        lbl = normalize(lbl, locale);
         if (!StringUtils.equals(currentLabel, lbl)) {
           if (raw.length() > 0) {
             raw.append("\n");
           }
-          raw.append(lbl.toUpperCase(locale)).append("\n");
+          raw.append(lbl).append("\n");
           currentLabel = lbl;
         }
 
@@ -136,14 +144,22 @@ public class NVRamMapParser implements NVRamParser {
     }
   }
 
-  private String normalize(String lbl) {
-    if (StringUtils.containsIgnoreCase(lbl, " PLACE")) {
-      return "HIGHEST SCORES";
+  private static final Pattern patternIndex = Pattern.compile("#\\d");
+
+  private String[] ignoredLabels = {
+      "FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", "SEVENTH", "EIGHTH", "NINETH", "TENTH",
+      "1ST", "2ND", "3RD", "4TH", "5TH", "6TH", "7TH", "8TH", "9TH", "10TH"
+  };
+
+  private String normalize(String lbl, Locale locale) {
+    for (String ignoredLabel : ignoredLabels) {
+      if (StringUtils.containsIgnoreCase(lbl, ignoredLabel)) {
+        return "HIGHEST SCORES";
+      }
     }
-    if (StringUtils.containsIgnoreCase(lbl, "BUY-IN ")) {
-      return "BUY-IN HIGHEST SCORES";
-    }
-    return lbl;
+    // Else do some cleanings
+    lbl = patternIndex.matcher(lbl).replaceFirst("");
+    return lbl.trim().toUpperCase(locale);
   }
 
   //--------------------------

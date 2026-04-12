@@ -33,7 +33,7 @@ public class NVRamPinemhiParserTest {
     String rom = "bcats_l5";
     File nvram = new File("nvrams", rom + ".nv");
 
-    List<Score> scores = parser.parseNvRam(nvram, Locale.ENGLISH);
+    List<Score> scores = parser.parseNvRam(nvram, Locale.ENGLISH, false);
     assertEquals(4, scores.size());
     for (Score sc : scores) {
       System.out.println(sc.toString());
