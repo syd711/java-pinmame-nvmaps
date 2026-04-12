@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.Text?>
+
+<BorderPane xmlns="http://javafx.com/javafx/17"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="net.nvrams.mapping.extracter.MainController"
+            styleClass="root-pane">
+
+    <!-- ═══════════════════════════════  TOP BAR  ═══════════════════════════ -->
+    <top>
+        <HBox styleClass="top-bar" alignment="CENTER_LEFT" spacing="12">
+            <padding><Insets top="14" right="20" bottom="14" left="20"/></padding>
+
+            <Label text="VPX" styleClass="logo-vpx"/>
+            <Label text="ROM Extractor" styleClass="logo-manager"/>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <Button fx:id="btnOpenFile"   text="⬆  Open File"   styleClass="btn-primary"
+                    onAction="#onOpenFile" mnemonicParsing="false"/>
+            <Button fx:id="btnCloseFile"  text="✕  Close File"  styleClass="btn-secondary"
+                    onAction="#onCloseFile" mnemonicParsing="false" disable="true"/>
+        </HBox>
+    </top>
+
+    <!-- ═════════════════════════════  MAIN CONTENT  ════════════════════════ -->
+    <center>
+        <SplitPane orientation="VERTICAL" dividerPositions="0.55" styleClass="main-split">
+
+            <!-- ── Upper half: file info + controls ─────────────────────── -->
+            <ScrollPane fitToWidth="true" styleClass="scroll-pane" hbarPolicy="NEVER">
+                <VBox spacing="0">
+
+                    <!-- EMPTY STATE -->
+                    <VBox fx:id="emptyStatePane" styleClass="empty-state"
+                          alignment="CENTER" spacing="16">
+                        <padding><Insets top="80" bottom="80"/></padding>
+                        <Label text="🎮" styleClass="empty-icon"/>
+                        <Label text="No file loaded" styleClass="empty-title"/>
+                        <Label text="Click &quot;Open File&quot; to load a VPX table"
+                               styleClass="empty-subtitle"/>
+                    </VBox>
+
+                    <!-- FILE INFO CARD -->
+                    <VBox fx:id="fileInfoPane" styleClass="info-card" spacing="0"
+                          visible="false" managed="false">
+                        <padding><Insets top="24" right="24" bottom="8" left="24"/></padding>
+
+                        <Label text="FILE INFORMATION" styleClass="section-heading"/>
+
+                        <GridPane styleClass="info-grid" hgap="12" vgap="8">
+                            <padding><Insets top="12" bottom="16"/></padding>
+
+                            <Label text="Name"      styleClass="info-key"   GridPane.columnIndex="0" GridPane.rowIndex="0"/>
+                            <Label fx:id="labelFileName"    styleClass="info-value" GridPane.columnIndex="1" GridPane.rowIndex="0" maxWidth="Infinity" GridPane.hgrow="ALWAYS"/>
+
+                            <Label text="Path"      styleClass="info-key"   GridPane.columnIndex="0" GridPane.rowIndex="1"/>
+                            <Label fx:id="labelFilePath"    styleClass="info-value info-value-muted" GridPane.columnIndex="1" GridPane.rowIndex="1" maxWidth="Infinity" GridPane.hgrow="ALWAYS" wrapText="true"/>
+
+                            <Label text="Size"      styleClass="info-key"   GridPane.columnIndex="0" GridPane.rowIndex="2"/>
+                            <Label fx:id="labelFileSize"    styleClass="info-value" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+
+                            <Label text="Modified"  styleClass="info-key"   GridPane.columnIndex="0" GridPane.rowIndex="3"/>
+                            <Label fx:id="labelLastModified" styleClass="info-value info-value-muted" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
+
+                            <Label text="VBS Script" styleClass="info-key"  GridPane.columnIndex="0" GridPane.rowIndex="4"/>
+                            <Label fx:id="labelVbsStatus"   styleClass="info-value vbs-missing" GridPane.columnIndex="1" GridPane.rowIndex="4"/>
+                        </GridPane>
+
+                        <Separator styleClass="divider"/>
+
+                        <!-- ROM NAME -->
+                        <Label text="ROM NAME" styleClass="section-heading">
+                            <VBox.margin><Insets top="16"/></VBox.margin>
+                        </Label>
+                        <HBox alignment="CENTER_LEFT" spacing="10">
+                            <VBox.margin><Insets top="8" bottom="20"/></VBox.margin>
+                            <TextField fx:id="textRomName" promptText="Enter ROM name…"
+                                       styleClass="rom-field" maxWidth="320" disable="true"/>
+                            <Label text="Used for NVRAM lookup and game launch" styleClass="field-hint"/>
+                        </HBox>
+
+                        <Separator styleClass="divider"/>
+
+                        <!-- ACTION BUTTONS -->
+                        <Label text="ACTIONS" styleClass="section-heading">
+                            <VBox.margin><Insets top="16"/></VBox.margin>
+                        </Label>
+                        <FlowPane hgap="10" vgap="10">
+                            <VBox.margin><Insets top="8" bottom="24"/></VBox.margin>
+
+                            <Button fx:id="btnLaunchGame"   text="▶  Launch Game"
+                                    styleClass="btn-action btn-launch"
+                                    onAction="#onLaunchGame" mnemonicParsing="false" disable="true"/>
+
+                            <Button fx:id="btnStopGame"     text="■  Stop Game"
+                                    styleClass="btn-action btn-stop"
+                                    onAction="#onStopGame" mnemonicParsing="false" disable="true"/>
+
+                            <Button fx:id="btnLoadNvram"    text="💾  Load NVRAM"
+                                    styleClass="btn-action btn-nvram"
+                                    onAction="#onLoadNvram" mnemonicParsing="false" disable="true"/>
+
+                            <Button fx:id="btnExtractVbs"   text="⬇  Extract VBS Script"
+                                    styleClass="btn-action btn-extract"
+                                    onAction="#onExtractVbs" mnemonicParsing="false" disable="true"/>
+
+                            <Button fx:id="btnAlternateRom" text="⇄  Alternate ROM"
+                                    styleClass="btn-action btn-alt-rom"
+                                    onAction="#onAlternateRom" mnemonicParsing="false" disable="true"/>
+
+                        </FlowPane>
+                    </VBox>
+                </VBox>
+            </ScrollPane>
+
+            <!-- ── Lower half: NVRAM output ─────────────────────────────── -->
+            <VBox styleClass="nvram-pane" spacing="0">
+                <padding><Insets top="16" right="20" bottom="16" left="20"/></padding>
+
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <VBox.margin><Insets bottom="10"/></VBox.margin>
+                    <Label text="NVRAM OUTPUT" styleClass="section-heading"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+                    <Button text="Clear" styleClass="btn-clear"
+                            onAction="#clearNvram" mnemonicParsing="false"/>
+                </HBox>
+
+                <TextArea fx:id="textNvramOutput"
+                          promptText="NVRAM data will appear here after clicking 'Load NVRAM'…"
+                          styleClass="nvram-output"
+                          editable="false" wrapText="false"
+                          VBox.vgrow="ALWAYS"/>
+            </VBox>
+
+        </SplitPane>
+    </center>
+
+    <!-- ══════════════════════════════  STATUS BAR  ═════════════════════════ -->
+    <bottom>
+        <HBox styleClass="status-bar" alignment="CENTER_LEFT" spacing="8">
+            <padding><Insets top="7" right="16" bottom="7" left="16"/></padding>
+            <Label text="●" styleClass="status-dot"/>
+            <Label fx:id="labelStatus" text="Ready" styleClass="status-text"/>
+        </HBox>
+    </bottom>
+
+</BorderPane>

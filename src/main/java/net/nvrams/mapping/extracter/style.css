@@ -1,0 +1,337 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   VPX Manager – Dark Industrial Theme
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Colour tokens ──────────────────────────────────────────────────────── */
+* {
+    -bg-base:      #0e0f13;
+    -bg-surface:   #16181f;
+    -bg-elevated:  #1e212b;
+    -bg-border:    #2a2d3a;
+
+    -accent:       #f0a500;
+    -accent-dim:   #c07800;
+    -accent-glow:  rgba(240,165,0,0.25);
+
+    -green:        #38d97a;
+    -red:          #e05252;
+    -blue:         #4fa3e0;
+    -purple:       #a07fd4;
+
+    -text-primary: #e8eaf0;
+    -text-muted:   #7a7f94;
+    -text-faint:   #454a5c;
+
+    -radius:       6px;
+    -font-mono:    "JetBrains Mono", "Fira Mono", "Consolas", monospace;
+    -font-ui:      "Segoe UI", "Ubuntu", "Helvetica Neue", sans-serif;
+}
+
+/* ── Root ───────────────────────────────────────────────────────────────── */
+.root-pane {
+    -fx-background-color: -bg-base;
+    -fx-font-family: -font-ui;
+    -fx-font-size: 13px;
+}
+
+/* ── Top bar ────────────────────────────────────────────────────────────── */
+.top-bar {
+    -fx-background-color: -bg-surface;
+    -fx-border-color: -bg-border;
+    -fx-border-width: 0 0 1 0;
+}
+
+.logo-vpx {
+    -fx-font-size: 22px;
+    -fx-font-weight: bold;
+    -fx-text-fill: -accent;
+    -fx-font-family: -font-mono;
+    -fx-letter-spacing: 2px;
+}
+.logo-manager {
+    -fx-font-size: 22px;
+    -fx-font-weight: 300;
+    -fx-text-fill: -text-primary;
+    -fx-font-family: -font-ui;
+}
+
+/* ── Scroll + split pane ────────────────────────────────────────────────── */
+.main-split {
+    -fx-background-color: -bg-base;
+    -fx-box-border: transparent;
+}
+.main-split > .split-pane-divider {
+    -fx-background-color: -bg-border;
+    -fx-padding: 1px;
+}
+.scroll-pane {
+    -fx-background-color: -bg-base;
+    -fx-background: -bg-base;
+}
+.scroll-pane > .viewport {
+    -fx-background-color: -bg-base;
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+.empty-state {
+    -fx-background-color: -bg-base;
+}
+.empty-icon {
+    -fx-font-size: 56px;
+}
+.empty-title {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+}
+.empty-subtitle {
+    -fx-text-fill: -text-faint;
+    -fx-font-size: 13px;
+}
+
+/* ── Info card ──────────────────────────────────────────────────────────── */
+.info-card {
+    -fx-background-color: -bg-base;
+}
+
+.section-heading {
+    -fx-text-fill: -accent;
+    -fx-font-size: 10px;
+    -fx-font-weight: bold;
+    -fx-letter-spacing: 2px;
+    -fx-font-family: -font-mono;
+}
+
+.info-grid {
+    -fx-background-color: -bg-surface;
+    -fx-background-radius: -radius;
+    -fx-border-color: -bg-border;
+    -fx-border-radius: -radius;
+    -fx-padding: 14 16 14 16;
+}
+.info-key {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 12px;
+    -fx-min-width: 80px;
+}
+.info-value {
+    -fx-text-fill: -text-primary;
+    -fx-font-size: 13px;
+    -fx-font-family: -font-mono;
+}
+.info-value-muted {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 12px;
+}
+
+.vbs-present {
+    -fx-text-fill: -green;
+}
+.vbs-missing {
+    -fx-text-fill: -red;
+}
+
+.divider {
+    -fx-background-color: -bg-border;
+    -fx-padding: 0;
+    -fx-pref-height: 1px;
+    -fx-opacity: 0.6;
+}
+
+/* ── ROM field ──────────────────────────────────────────────────────────── */
+.rom-field {
+    -fx-background-color: -bg-elevated;
+    -fx-border-color: -bg-border;
+    -fx-border-radius: -radius;
+    -fx-background-radius: -radius;
+    -fx-text-fill: -text-primary;
+    -fx-prompt-text-fill: -text-faint;
+    -fx-font-family: -font-mono;
+    -fx-font-size: 13px;
+    -fx-padding: 6 10 6 10;
+}
+.rom-field:focused {
+    -fx-border-color: -accent;
+}
+.rom-field:disabled {
+    -fx-opacity: 0.4;
+}
+.field-hint {
+    -fx-text-fill: -text-faint;
+    -fx-font-size: 11px;
+    -fx-font-style: italic;
+}
+
+/* ── Buttons ────────────────────────────────────────────────────────────── */
+.btn-primary {
+    -fx-background-color: -accent;
+    -fx-text-fill: #0e0f13;
+    -fx-font-weight: bold;
+    -fx-font-size: 13px;
+    -fx-background-radius: -radius;
+    -fx-padding: 8 18 8 18;
+    -fx-cursor: hand;
+}
+.btn-primary:hover {
+    -fx-background-color: derive(-accent, 15%);
+}
+.btn-primary:pressed {
+    -fx-background-color: -accent-dim;
+}
+
+.btn-secondary {
+    -fx-background-color: -bg-elevated;
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 13px;
+    -fx-background-radius: -radius;
+    -fx-border-color: -bg-border;
+    -fx-border-radius: -radius;
+    -fx-padding: 8 18 8 18;
+    -fx-cursor: hand;
+}
+.btn-secondary:hover {
+    -fx-text-fill: -text-primary;
+    -fx-border-color: -text-muted;
+}
+.btn-secondary:disabled {
+    -fx-opacity: 0.35;
+}
+
+/* Action buttons */
+.btn-action {
+    -fx-font-size: 13px;
+    -fx-background-radius: -radius;
+    -fx-padding: 9 20 9 20;
+    -fx-cursor: hand;
+    -fx-font-weight: bold;
+}
+.btn-action:disabled {
+    -fx-opacity: 0.3;
+}
+
+.btn-launch {
+    -fx-background-color: -green;
+    -fx-text-fill: #0a1a10;
+}
+.btn-launch:hover  { -fx-background-color: derive(-green, 15%); }
+.btn-launch:pressed{ -fx-background-color: derive(-green, -10%); }
+
+.btn-stop {
+    -fx-background-color: -red;
+    -fx-text-fill: #1a0505;
+}
+.btn-stop:hover  { -fx-background-color: derive(-red, 15%); }
+.btn-stop:pressed{ -fx-background-color: derive(-red, -10%); }
+.btn-stop:disabled { -fx-opacity: 0.3; }
+
+.btn-extract {
+    -fx-background-color: -blue;
+    -fx-text-fill: #06121e;
+}
+.btn-extract:hover  { -fx-background-color: derive(-blue, 15%); }
+.btn-extract:pressed{ -fx-background-color: derive(-blue, -10%); }
+
+.btn-alt-rom {
+    -fx-background-color: -purple;
+    -fx-text-fill: #0e0a1a;
+}
+.btn-alt-rom:hover  { -fx-background-color: derive(-purple, 15%); }
+.btn-alt-rom:pressed{ -fx-background-color: derive(-purple, -10%); }
+
+.btn-nvram {
+    -fx-background-color: -accent;
+    -fx-text-fill: #0e0f13;
+}
+.btn-nvram:hover  { -fx-background-color: derive(-accent, 15%); }
+.btn-nvram:pressed{ -fx-background-color: -accent-dim; }
+
+.btn-clear {
+    -fx-background-color: transparent;
+    -fx-text-fill: -text-faint;
+    -fx-font-size: 11px;
+    -fx-background-radius: 4px;
+    -fx-border-color: -bg-border;
+    -fx-border-radius: 4px;
+    -fx-padding: 3 10 3 10;
+    -fx-cursor: hand;
+}
+.btn-clear:hover {
+    -fx-text-fill: -text-muted;
+    -fx-border-color: -text-faint;
+}
+
+/* ── NVRAM pane ─────────────────────────────────────────────────────────── */
+.nvram-pane {
+    -fx-background-color: -bg-surface;
+    -fx-border-color: -bg-border;
+    -fx-border-width: 1 0 0 0;
+}
+
+.nvram-output {
+    -fx-background-color: -bg-base;
+    -fx-control-inner-background: -bg-base;
+    -fx-text-fill: -green;
+    -fx-font-family: -font-mono;
+    -fx-font-size: 12px;
+    -fx-background-radius: -radius;
+    -fx-border-color: -bg-border;
+    -fx-border-radius: -radius;
+    -fx-prompt-text-fill: -text-faint;
+}
+.nvram-output .content {
+    -fx-background-color: -bg-base;
+}
+.nvram-output .scroll-pane {
+    -fx-background-color: -bg-base;
+}
+
+/* ── Status bar ─────────────────────────────────────────────────────────── */
+.status-bar {
+    -fx-background-color: -bg-surface;
+    -fx-border-color: -bg-border;
+    -fx-border-width: 1 0 0 0;
+}
+.status-dot {
+    -fx-text-fill: -green;
+    -fx-font-size: 10px;
+}
+.status-text {
+    -fx-text-fill: -text-muted;
+    -fx-font-size: 12px;
+    -fx-font-family: -font-mono;
+}
+
+/* ── Dialogs ────────────────────────────────────────────────────────────── */
+.dialog-pane {
+    -fx-background-color: -bg-surface;
+    -fx-border-color: -bg-border;
+}
+.dialog-pane .header-panel {
+    -fx-background-color: -bg-elevated;
+}
+.dialog-pane .content {
+    -fx-text-fill: -text-primary;
+}
+.dialog-pane .button-bar .button {
+    -fx-background-color: -bg-elevated;
+    -fx-text-fill: -text-primary;
+    -fx-border-color: -bg-border;
+    -fx-border-radius: -radius;
+    -fx-background-radius: -radius;
+    -fx-cursor: hand;
+}
+.dialog-pane .button-bar .button:hover {
+    -fx-border-color: -accent;
+    -fx-text-fill: -accent;
+}
+.dialog-pane .text-field {
+    -fx-background-color: -bg-base;
+    -fx-text-fill: -text-primary;
+    -fx-border-color: -bg-border;
+    -fx-border-radius: -radius;
+    -fx-background-radius: -radius;
+    -fx-font-family: -font-mono;
+}
+.dialog-pane .label {
+    -fx-text-fill: -text-primary;
+}
