@@ -94,9 +94,8 @@ public class NVRamMapParser implements NVRamParser {
         if (parseAll || filter(lbl)) {
           String initials = score.formatInitials(memory, locale);
           Long value = score.getValue(memory);
-          String raw = score.formatHighScore(memory, locale);
-          Score sc = new Score(initials, raw, value, position++);
-          sc.setLabel(lbl);
+          Score sc = new Score(initials, value, position++, lbl);
+          sc.setRawScore(score.formatHighScore(memory, locale));
           scores.add(sc);
         }
       }

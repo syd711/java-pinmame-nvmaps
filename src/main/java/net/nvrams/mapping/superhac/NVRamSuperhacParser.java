@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -25,13 +26,13 @@ import net.nvrams.mapping.Score;
  * 
  */
 @Service
-public class NVRamMapSuperhacParser implements NVRamParser {
-  private final static Logger LOG = LoggerFactory.getLogger(NVRamMapSuperhacParser.class);
+public class NVRamSuperhacParser implements NVRamParser {
+  private final static Logger LOG = LoggerFactory.getLogger(NVRamSuperhacParser.class);
 
   // the root where map file can be downloaded
   public String mapRoot = "https://github.com/superhac/pinmame-score-parser/releases/download/v1.0.2/roms.json";
 
-  private Map<String, ?> _cacheMapForRom;
+  private Map<String, NVRamMap> _cacheMapForRom;
 
 
   @Override
@@ -53,7 +54,7 @@ public class NVRamMapSuperhacParser implements NVRamParser {
 
       _cacheMapForRom  = download(indexUrl, in -> {
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(in, new TypeReference<Map<String, ?>>() {});
+        return mapper.readValue(in, new TypeReference<Map<String, NVRamMap>>() {});
       });
       LOG.info("Rom Cache loaded with {} roms", _cacheMapForRom.size());
     }
@@ -86,12 +87,28 @@ public class NVRamMapSuperhacParser implements NVRamParser {
 
   @Override
   public List<Score> parseNvRam(File nvRam, Locale locale, boolean parseAll) throws IOException {
-    throw new UnsupportedOperationException("Unimplemented method 'parseNvRam'");
+    ensureCacheMapForRom();
+
+    String rom = nvRam.getName().replace(".nv", "");
+    NVRamMap map = _cacheMapForRom.get(rom);
+    if (map != null) {
+      byte[] data = Files.readAllBytes(nvRam.toPath());
+      return map.parseScores(data, parseAll);
+    }
+    return Collections.emptyList();
   }
 
   @Override
   public String getRaw(File nvRam, Locale locale) throws IOException {
-    throw new UnsupportedOperationException("Unimplemented method 'getRaw'");
+    ensureCacheMapForRom();
+
+    String rom = nvRam.getName().replace(".nv", "");
+    NVRamMap map = _cacheMapForRom.get(rom);
+    if (map != null) {
+      byte[] data = Files.readAllBytes(nvRam.toPath());
+      return map.getRaw(data, locale);
+    }
+    return null;
   }
 
 }

@@ -15,36 +15,47 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 public class Score {
   private final static Logger LOG = LoggerFactory.getLogger(Score.class);
 
-  private String playerInitials = "???";
-  private long score;
+  private String label;       // The label/title of the group
+
+  private String playerInitials;
+  private Long score;
+  private String scoreText;
+
   private int position;
-  private String label;       // optional label for titled scores, high-scores, buy-in scores....
   private String suffix;      // optional suffix for non high scores: 100M, 100Gb, 100 combos, 100 martians,... Include initial space if this is a unit
   private String rawScore;
 
   private final static Map<Locale, DecimalFormat> formats = new HashMap<>();
 
 
-  public Score(String playerInitials, String rawScore, long score, int position) {
+  public Score(String playerInitials, String scoreText, int position, String title) {
+    this.label = title;
+    this.scoreText = scoreText;
+    this.position = position;
+    if (!StringUtils.isEmpty(playerInitials)) {
+      this.playerInitials = playerInitials.trim();
+    }
+  }
+
+  public Score(String playerInitials, Long score, int position, String title) {
+    this.label = title;
     this.score = score;
     this.position = position;
-    this.rawScore = rawScore;
     if (!StringUtils.isEmpty(playerInitials)) {
-      this.playerInitials = playerInitials;
+      this.playerInitials = playerInitials.trim();
     }
   }
 
   public String getPlayerInitials() {
-    while (playerInitials.length() < 3) {
-      playerInitials += " ";
+    String initials = StringUtils.defaultString(this.playerInitials);
+    while (initials.length() < 3) {
+      initials += " ";
     }
-    return playerInitials;
+    return initials;
   }
 
   public void setPlayerInitials(String playerInitials) {
-    if (!StringUtils.isEmpty(playerInitials.trim())) {
-      this.playerInitials = playerInitials;
-    }
+    this.playerInitials = playerInitials;
   }
 
   public int getPosition() {
@@ -55,12 +66,20 @@ public class Score {
     this.position = position;
   }
 
-  public long getScore() {
+  public Long getScore() {
     return score;
   }
 
-  public void setScore(long score) {
+  public void setScore(Long score) {
     this.score = score;
+  }
+
+  public String getScoreText() {
+    return scoreText;
+  }
+
+  public void setScoreText(String scoreText) {
+    this.scoreText = scoreText;
   }
 
   public String getRawScore() {
@@ -70,21 +89,27 @@ public class Score {
   public void setRawScore(String rawScore) {
     this.rawScore = rawScore;
   }
-
+  
   public String getLabel() {
     return label;
   }
 
-  public void setLabel(String label) {
-    this.label = label;
+  public void setLabel(String title) {
+    this.label = title;
   }
-  
+
   public String getSuffix() {
     return suffix;
   }
 
   public void setSuffix(String suffix) {
     this.suffix = suffix;
+  }
+
+  //---------------------------------------------
+
+  public boolean hasInitials() {
+    return playerInitials != null;
   }
 
   @Override
@@ -95,14 +120,13 @@ public class Score {
 
     Score score = (Score) obj;
     return score.getPlayerInitials().equalsIgnoreCase(this.getPlayerInitials())
-        && score.getPosition() == this.getPosition()
-        && score.getScore() == this.getScore();
+        && (score.getPosition() == this.getPosition())
+        && (score.getScore() != null ? score.getScore().equals(this.getScore()) : true)
+        && (score.getScoreText() != null ? score.getScoreText().equals(this.getScoreText()) : true);
   }
 
-  public boolean matches(Score newScore) {
-    return this.playerInitials != null && this.playerInitials.equals(newScore.getPlayerInitials())
-        && this.score == newScore.getScore();
-
+  public String toRaw(Locale loc) {
+    return rawScore != null ? rawScore : toString(loc);
   }
 
   @Override
@@ -111,7 +135,8 @@ public class Score {
   }
 
   public String toString(Locale loc) {
-    return "#" + this.getPosition() + " " + this.getPlayerInitials() + "   " + getFormattedScore(loc);
+    String disp = (position > 0 ? position + ") " : "") + getPlayerInitials() + "   " + getFormattedScore(loc) + (suffix != null? " " + suffix : "");
+    return disp.trim();
   }
 
   @JsonIgnore
@@ -121,7 +146,17 @@ public class Score {
 
   @JsonIgnore
   public String getFormattedScore(Locale loc) {
-     try {
+    if (score != null) {
+      return getFormattedScore(score, loc);
+    }
+    else if (scoreText != null) {
+      return scoreText;
+    }
+    return "";
+  }
+
+  public static String getFormattedScore(long score, Locale loc) {
+    try {
       DecimalFormat decimalFormat = formats.get(loc);
       if (decimalFormat == null) {
         DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(loc);
@@ -144,9 +179,5 @@ public class Score {
       return "0";
     }
   }
-
-    
-
-
 
 }

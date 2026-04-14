@@ -2,7 +2,7 @@ package net.nvrams.mapping.tools;
 
 import net.nvrams.mapping.map.NVRamMapParser;
 import net.nvrams.mapping.pinemhi.NVRamPinemhiParser;
-import net.nvrams.mapping.superhac.NVRamMapSuperhacParser;
+import net.nvrams.mapping.superhac.NVRamSuperhacParser;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +29,7 @@ public class NVRamParserCompareTool {
     NVRamPinemhiParser pinemhi = new NVRamPinemhiParser();
     List<String> supportedByPinemhi = pinemhi.getSupportedNVRams();
     
-    NVRamMapSuperhacParser superhac = new NVRamMapSuperhacParser();
+    NVRamSuperhacParser superhac = new NVRamSuperhacParser();
     List<String> supportedbySuperhac = superhac.getSupportedNVRams();
 
     File nvramsFolder = new File("nvrams");

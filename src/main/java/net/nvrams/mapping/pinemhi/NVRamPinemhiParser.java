@@ -33,8 +33,8 @@ public class NVRamPinemhiParser implements NVRamParser {
 
   private List<String> titles = List.of("MASTER MAGICIAN", "CHAMPION", "GRAND CHAMPION", "WORLD RECORD", "GREATEST VAMPIRE HUNTER", "GREATEST TIME LORD", "RIVER MASTER", "CLUB CHAMPION", "HIGHEST SCORES", "HIGHEST SCORE", "THE BEST DUDE", "ACE WINGER",
     // to be added in ScoringDB.json....
-    // che_cho
-       "ROAD-TRIP KING"
+    // che_cho            bop_17                     punchy            punchy
+       "ROAD-TRIP KING", "BILLIONAIRE CLUB MEMBERS", "MY BEST FRIEND", "MY OTHER FRIENDS"
   );
 
 
@@ -174,47 +174,68 @@ public class NVRamPinemhiParser implements NVRamParser {
       List<Score> scores = new ArrayList<>();
 
 	    String currentTitle = null;
-      String currentSuffix = null;
       Score currentScore = null;
+      String currentBuffer = null;
       for (int i = 0; i < lines.size(); i++) {
-         String line = lines.get(i).trim();
+        String line = lines.get(i).trim();
       	if (StringUtils.isEmpty(line)) {
-          if (currentSuffix != null && currentScore != null) {
-            currentScore.setSuffix(currentSuffix);
+          if (currentBuffer != null) {
+            currentScore = createTitledScore(currentTitle, currentBuffer);
+          	if (currentScore != null) {
+              scores.add(currentScore);
+            }
+            currentBuffer = null;
           }
-        	// restart a possible new sequence
-        	currentTitle = null;
-          currentSuffix = null;
+          // restart a new sequence
+          currentTitle = null;
           currentScore = null;
-        	if (scores.size() >= 3 && !parseAll) {
-            	break;
-        	}
+          if (scores.size() > 3 && !parseAll) {
+              break;
+          }
           continue;
       	}
 
         if (currentTitle != null && isScoreLine(line)) {
           currentScore = createScore(currentTitle, line);
           if (currentScore != null) {
+            if (currentBuffer != null) {
+              // this happens rarely, ex rom jd_l7  REGULAR GAME > HIGH SCORES > scores  ou tf_180
+              currentBuffer = null;   
+            }
             scores.add(currentScore);
           }
         }
         else if (currentTitle != null && isTitleScoreLine(line)) {
-          if (parseAll || titles.contains(currentTitle)) {
-	          currentScore = createTitledScore(currentTitle, line);
-          	if (currentScore != null) {
-            	scores.add(currentScore);
-          	}
+          currentScore = createTitledScore(currentTitle, line);
+          if (currentScore != null) {
+            if (currentBuffer != null) {
+              setScoreOrSuffix(currentScore, currentBuffer);
+              currentBuffer = null;
+            }
+            if (parseAll || titles.contains(currentTitle)) {
+              scores.add(currentScore);
+            }
+          }
+        }
+        else if (currentTitle != null && StringUtils.isNotEmpty(line)) {
+          if (currentScore != null) {
+            setScoreOrSuffix(currentScore, line);
+          }
+          else if (currentBuffer == null) {
+            currentBuffer = line;
+          } else {
+            currentBuffer += " " + line;
           }
         }
         else if (StringUtils.isNotEmpty(line)) {
-          if (currentScore != null) {
-            currentSuffix = " " + line;
-          }
           currentTitle = line;
         }
       }
-      if (currentSuffix != null && currentScore != null) {
-        currentScore.setSuffix(currentSuffix);
+      if (currentBuffer != null) {
+        currentScore = createTitledScore(currentTitle, currentBuffer);
+        if (currentScore != null) {
+          scores.add(currentScore);
+        }
       }
 
       return scores;
@@ -224,24 +245,37 @@ public class NVRamPinemhiParser implements NVRamParser {
       throw e;
     }
   }
+  private void setScoreOrSuffix(Score currentScore, String line) {
+    if (!currentScore.hasInitials()) {
+      currentScore.setPlayerInitials(line);
+    }
+    else if (currentScore.getScore() == null && currentScore.getScoreText() == null) {
+      currentScore.setScoreText(line);
+    }
+    else if (currentScore.getScore() == null) {
+      currentScore.setScoreText(currentScore.getScoreText() + " | " + line);
+    }
+    else {
+      currentScore.setSuffix(line);
+    }
+  }
 
   //-------------------------
 
-  private static final String _patternIndex = "(\\d+\\)|#\\d+|\\d+#|\\d+\\.:)";
-  private static final String _patternScore = "(\\s+.{3,})?(\\s+-)?(\\s+(\\d\\d?\\d?(?:[., ?\u00a0\u202f\ufffd\u00ff]?\\d\\d\\d)*(\\.\\d)?)((\\s?[a-zA-Z]+)*))+$";
+  private static final String _patternIndex = "(\\d+\\)|\\d+,|#\\d+|\\d+#|\\d+\\.:)";
+  private static final String _patternScore = "([ ?a-zA-Z0-9\u0000]{3,}\\s+)?(?:[-|]?\\s+)?(\\d\\d?\\d?(?:[.,?\u00a0\u202f\ufffd\u00ff]?\\d\\d\\d)*(?:\\.\\d)?)((?:\\s\\d+)?[\\-\\sa-zA-Z]*)$";
 
-  private static final Pattern patternScoreLine = Pattern.compile(_patternIndex + _patternScore);
-  private static final Pattern patternScoreTitle = Pattern.compile(_patternScore);
+  private static final Pattern patternScoreLine = Pattern.compile("^" + _patternIndex + _patternScore);
+  private static final Pattern patternScoreTitle = Pattern.compile("^" + _patternScore);
 
 
   public boolean isTitleScoreLine(String line) {
-    // the space is needed to match line like "100,000", else does not interfere 
-    Matcher m = patternScoreTitle.matcher(" " + line);
+    Matcher m = patternScoreTitle.matcher(line);
     return m.find();
   }
 
   public boolean isScoreLine(String line) {
-    Matcher m = patternScoreLine.matcher(" " + line);
+    Matcher m = patternScoreLine.matcher(line);
     return m.find();
   }
 
@@ -250,23 +284,18 @@ public class NVRamPinemhiParser implements NVRamParser {
    * These scores do not have a leading position number.
    */
   @Nullable
-  protected Score createTitledScore(@Nullable String title, @NonNull String line) {
-    // the space is needed to match line like "100,000", else does not interfere 
-    Matcher m = patternScoreTitle.matcher(" " + line);
+  public Score createTitledScore(@Nullable String title, @NonNull String line) {
+    Matcher m = patternScoreTitle.matcher(line);
     if (m.find()) {
-      String initials = m.group(1);
-      if (StringUtils.isEmpty(initials)) {
-        initials = "???";
-      }
-
-      String scoreString = m.group(4).trim();
+      String initials = StringUtils.trim(m.group(1));
+      String scoreString = StringUtils.trim(m.group(2));
       long scoreValue = toNumericScore(scoreString, false);
       if (scoreValue != -1) {
-        Score sc = new Score(initials.trim(), scoreString, scoreValue, 1);
-        sc.setLabel(title);
+        Score sc = new Score(initials, scoreValue, -1, title);
+        sc.setRawScore(line);
 
         // do not trim and keep spaces at beginning if present
-        String suffix = m.group(6);
+        String suffix = StringUtils.trim(m.group(3));
         if (StringUtils.isNotEmpty(suffix)) {
           sc.setSuffix(suffix);
         }
@@ -280,10 +309,11 @@ public class NVRamPinemhiParser implements NVRamParser {
   public Score createScore(@Nullable String title, @NonNull String line) {
     String idx = StringUtils.substringBefore(line, " ");
     idx = idx.replace(")", "");
+    idx = idx.replace(",", "");
     idx = idx.replace("#", "");
     idx = idx.replace(".:", "");
     int index = Integer.parseInt(idx);
-    
+
     line = StringUtils.substringAfter(line, " ");
     Score sc = createTitledScore(title, line);
     sc.setPosition(index);
