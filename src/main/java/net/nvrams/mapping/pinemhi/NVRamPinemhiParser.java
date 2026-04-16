@@ -24,7 +24,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 
 import net.nvrams.mapping.NVRamParser;
-import net.nvrams.mapping.Score;
+import net.nvrams.mapping.NVRamScore;
 
 public class NVRamPinemhiParser implements NVRamParser {
   private final static Logger LOG = LoggerFactory.getLogger(NVRamPinemhiParser.class);
@@ -48,20 +48,22 @@ public class NVRamPinemhiParser implements NVRamParser {
 
   @Nullable
   @Override
-  public List<Score> parseNvRam(@NonNull File nvRam, Locale locale, boolean parseAll) throws IOException {
+  public List<NVRamScore> parseNvRam(String rom, @NonNull File nvRam, Locale locale, boolean parseAll) throws IOException {
     List<String> lines = getLines(nvRam);
     return convertOutputToRaw(lines, parseAll);
   }
 
  @Override
-  public String getRaw(@NonNull File nvRam, Locale locale) throws IOException {
-    List<String> lines = getLines(nvRam);
-    StringBuilder bld = new StringBuilder();
-    for (String line : lines) {
-      bld.append(line).append("\n");
-    }
-    return bld.toString();
+  public List<String> getRaw(String rom, @NonNull File nvRam, Locale locale) throws IOException {
+    return getLines(nvRam);
   }
+
+
+@Override
+  public List<NVRamScore> parseRaw(String rom, List<String> lines, Locale locale, boolean parseAll) throws IOException {
+    return convertOutputToRaw(lines, parseAll);
+  }
+
 
   private List<String> getLines(File nvRam) throws IOException {
     File originalNVRamFile = nvRam;
@@ -169,12 +171,12 @@ public class NVRamPinemhiParser implements NVRamParser {
 
 
   @NonNull
-  private List<Score> convertOutputToRaw(List<String> lines, boolean parseAll) throws IOException {
+  private List<NVRamScore> convertOutputToRaw(List<String> lines, boolean parseAll) throws IOException {
     try {
-      List<Score> scores = new ArrayList<>();
+      List<NVRamScore> scores = new ArrayList<>();
 
 	    String currentTitle = null;
-      Score currentScore = null;
+      NVRamScore currentScore = null;
       String currentBuffer = null;
       for (int i = 0; i < lines.size(); i++) {
         String line = lines.get(i).trim();
@@ -245,7 +247,7 @@ public class NVRamPinemhiParser implements NVRamParser {
       throw e;
     }
   }
-  private void setScoreOrSuffix(Score currentScore, String line) {
+  private void setScoreOrSuffix(NVRamScore currentScore, String line) {
     if (!currentScore.hasInitials()) {
       currentScore.setPlayerInitials(line);
     }
@@ -263,7 +265,7 @@ public class NVRamPinemhiParser implements NVRamParser {
   //-------------------------
 
   private static final String _patternIndex = "(\\d+\\)|\\d+,|#\\d+|\\d+#|\\d+\\.:)";
-  private static final String _patternScore = "([ ?a-zA-Z0-9\u0000]{3,}\\s+)?(?:[-|]?\\s+)?(\\d\\d?\\d?(?:[.,?\u00a0\u202f\ufffd\u00ff]?\\d\\d\\d)*(?:\\.\\d)?)((?:\\s\\d+)?[\\-\\sa-zA-Z]*)$";
+  private static final String _patternScore = "([ ?/+\\-a-zA-Z0-9\u0000]{3,}\\s+)?(?:[-|]?\\s+)?(\\d\\d?\\d?(?:[.,?\u00a0\u202f\ufffd\u00ff]?\\d\\d\\d)*(?:\\.\\d)?)((?:\\s\\d+)?[\\-\\sa-zA-Z]*)$";
 
   private static final Pattern patternScoreLine = Pattern.compile("^" + _patternIndex + _patternScore);
   private static final Pattern patternScoreTitle = Pattern.compile("^" + _patternScore);
@@ -284,14 +286,15 @@ public class NVRamPinemhiParser implements NVRamParser {
    * These scores do not have a leading position number.
    */
   @Nullable
-  public Score createTitledScore(@Nullable String title, @NonNull String line) {
+  public NVRamScore createTitledScore(@Nullable String title, @NonNull String line) {
     Matcher m = patternScoreTitle.matcher(line);
     if (m.find()) {
       String initials = StringUtils.trim(m.group(1));
+
       String scoreString = StringUtils.trim(m.group(2));
       long scoreValue = toNumericScore(scoreString, false);
       if (scoreValue != -1) {
-        Score sc = new Score(initials, scoreValue, -1, title);
+        NVRamScore sc = new NVRamScore(initials, scoreValue, -1, title);
         sc.setRawScore(line);
 
         // do not trim and keep spaces at beginning if present
@@ -306,7 +309,7 @@ public class NVRamPinemhiParser implements NVRamParser {
   }
 
   @Nullable
-  public Score createScore(@Nullable String title, @NonNull String line) {
+  public NVRamScore createScore(@Nullable String title, @NonNull String line) {
     String idx = StringUtils.substringBefore(line, " ");
     idx = idx.replace(")", "");
     idx = idx.replace(",", "");
@@ -315,7 +318,7 @@ public class NVRamPinemhiParser implements NVRamParser {
     int index = Integer.parseInt(idx);
 
     line = StringUtils.substringAfter(line, " ");
-    Score sc = createTitledScore(title, line);
+    NVRamScore sc = createTitledScore(title, line);
     sc.setPosition(index);
     return sc;
   }
@@ -340,7 +343,7 @@ public class NVRamPinemhiParser implements NVRamParser {
     }
   }
 
-  public static String cleanScore(String score) {
+  protected String cleanScore(String score) {
     return score
         .replace(".", "")
         .replace(",", "")

@@ -5,7 +5,7 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
-import net.nvrams.mapping.Score;
+import net.nvrams.mapping.NVRamScore;
 
 public class EntryDecoders {
 
@@ -19,7 +19,7 @@ public class EntryDecoders {
     return MONTH_NAMES.getOrDefault(m, String.valueOf(m));
   }
 
-  public static Score dispatchEntryDecoder(byte[] f, NVRamEntry entry, String initials, int rank, String title, 
+  public static NVRamScore dispatchEntryDecoder(byte[] f, NVRamEntry entry, String initials, int rank, String title, 
     boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
   switch (entry.getEntryDecoder()) {
     case "afm_ruler_of_the_universe":
@@ -61,7 +61,7 @@ public class EntryDecoders {
     }
   }
 
-  private static Score decodeAfmRulerOfTheUniverseEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
+  private static NVRamScore decodeAfmRulerOfTheUniverseEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> dataBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     int termOffset = entry.getExtraOffset("term");
@@ -78,10 +78,10 @@ public class EntryDecoders {
         : String.format("RE-ELECTION #%X", termByte);
 
     String valueText = termText + " | " + dataBytes.get(3) + " " + month + ", " + year + " " + hour + ":" + minute + suffix;
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeAndrett4LapTimeEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
+  private static NVRamScore decodeAndrett4LapTimeEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
     List<Integer> offsets = entry.getDataOffsets();
     int lapByte = ByteDecoders.readOffsets(f, offsets, oneBased).get(0);
     int high = lapByte >> 4;
@@ -89,15 +89,15 @@ public class EntryDecoders {
     String lowText = lapByte != 0 ? Integer.toHexString(low).toUpperCase() : "0";
 
     String valueText = high + "." + lowText + "0";
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeApollo13MultiballEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title) {
+  private static NVRamScore decodeApollo13MultiballEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title) {
      String valueText = "PLAYED 13-BALL MULTIBALL";
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeLabeledSingleValueEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
+  private static NVRamScore decodeLabeledSingleValueEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
     List<Integer> offsets = entry.getDataOffsets();
     int valueByte = ByteDecoders.readOffsets(f, offsets, oneBased).get(0);
     String valueText;
@@ -110,31 +110,31 @@ public class EntryDecoders {
     if (StringUtils.isNotEmpty(entry.getLabel())) {
       valueText = entry.getLabel() + " = " + valueText;
     }
-    Score sc = new Score(initials, valueText, rank, title);
+    NVRamScore sc = new NVRamScore(initials, valueText, rank, title);
 		if (StringUtils.isNotEmpty(entry.getValueSuffix())) {
       sc.setSuffix(entry.getValueSuffix());
     }
     return sc;
   }
 
-  private static Score decodeSinceDateEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
+  private static NVRamScore decodeSinceDateEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> dataBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     String month = monthName(dataBytes.get(0));
     int day = dataBytes.get(1);
     int year = dataBytes.get(2) * 256 + dataBytes.get(3);
     String valueText = "SINCE " + month + ". " + day + ", " + year;
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeXYSecondsEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
+  private static NVRamScore decodeXYSecondsEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> dataBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     String valueText = dataBytes.get(0) + "." + dataBytes.get(1) + " SECONDS";
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeMmSsCcEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
+  private static NVRamScore decodeMmSsCcEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> dataBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     int total = dataBytes.get(0) * 256 + dataBytes.get(1);
@@ -142,10 +142,10 @@ public class EntryDecoders {
     int seconds = Math.round((total - minutes * 6000) / 100.0f);
     int centiseconds = total - minutes * 6000 - seconds * 100;
     String valueText = String.format("%02d:%02d.%02d", minutes, seconds, centiseconds);
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeCrownedDatetimeEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
+  private static NVRamScore decodeCrownedDatetimeEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> dataBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     int crownCountOffset = entry.getExtraOffset("crown_count");
@@ -166,10 +166,10 @@ public class EntryDecoders {
     String valueText = "CROWNED FOR THE " + crownCount + suffix + " TIME" + " | " + 
       dataBytes.get(3) + " " + month + ", " + year + " " + hour + ":" + String.format("%02d", dataBytes.get(5)) + amPm;
 
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeDatetimeEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
+  private static NVRamScore decodeDatetimeEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> dataBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     String month = monthName(dataBytes.get(2));
@@ -181,10 +181,10 @@ public class EntryDecoders {
     String valueText = dataBytes.get(3) + " " + month + ", " + year
         + " " + hour + ":" + String.format("%02d", dataBytes.get(5)) + amPm;
 
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeTeamWinsRingsEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
+  private static NVRamScore decodeTeamWinsRingsEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> dataBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     long rings = ByteDecoders.bcdToInt(List.of(dataBytes.get(0)));
@@ -200,20 +200,20 @@ public class EntryDecoders {
       valueText = wins + " " + rings + "-RINGS";
     }
 
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeStaticTextEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title) {
+  private static NVRamScore decodeStaticTextEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title) {
     String valueText = entry.getText();
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeNameTextEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title) {
+  private static NVRamScore decodeNameTextEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title) {
     String valueText = entry.getText();
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeLabeledScoreEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
+  private static NVRamScore decodeLabeledScoreEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> scoreBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     long score = ScoreDecoders.decodeScoreBytes(scoreBytes, entry.getScoreDecoder(), entry, zeroByte, zeroIfGte);
@@ -221,42 +221,42 @@ public class EntryDecoders {
     if (entry.getValueSuffix() != null) {
       valueText += " " + entry.getValueSuffix();
     }
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeGotToYearEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
+  private static NVRamScore decodeGotToYearEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased) {
     List<Integer> offsets = entry.getDataOffsets();
     int dataByte = ByteDecoders.readOffsets(f, offsets, oneBased).get(0);
     int baseYear = entry.getBaseYear() != null ? (Integer) entry.getBaseYear() : 1993;
     long year = baseYear - ByteDecoders.bcdToInt(List.of(dataByte)) * 100;
     String valueText = " GOT TO " + year;
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeLabelNameValueEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
+  private static NVRamScore decodeLabelNameValueEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> dataBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     long value = ScoreDecoders.decodeScoreBytes(dataBytes, entry.getScoreDecoder(), entry, zeroByte, zeroIfGte);
     String valueText = entry.getLabel() + " | " + formatValue(value, entry);
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeNameValueEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
+  private static NVRamScore decodeNameValueEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> dataBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     long value = ScoreDecoders.decodeScoreBytes(dataBytes, entry.getScoreDecoder(), entry, zeroByte, zeroIfGte);
     String valueText = formatValue(value, entry);
 
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
-  private static Score decodeLabelValueNameEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
+  private static NVRamScore decodeLabelValueNameEntry(byte[] f, NVRamEntry entry, String initials, int rank, String title, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
     List<Integer> offsets = entry.getDataOffsets();
     List<Integer> dataBytes = ByteDecoders.readOffsets(f, offsets, oneBased);
     long value = ScoreDecoders.decodeScoreBytes(dataBytes, entry.getScoreDecoder(), entry, zeroByte, zeroIfGte);
     String valueText = entry.getLabel() + formatValue(value, entry);
 
-    return new Score(initials, valueText, rank, title);
+    return new NVRamScore(initials, valueText, rank, title);
   }
 
   private static String formatValue(long value, NVRamEntry entry) {

@@ -15,7 +15,7 @@ import net.nvrams.mapping.map.ChecksumMapping;
 import net.nvrams.mapping.map.NVRamMap;
 import net.nvrams.mapping.map.NVRamMapping;
 import net.nvrams.mapping.map.NVRamMappings;
-import net.nvrams.mapping.map.NVRamScore;
+import net.nvrams.mapping.map.NVRamScoreMapping;
 import net.nvrams.mapping.map.SparseMemory;
 
 public class NVRamToolDump {
@@ -71,10 +71,10 @@ public class NVRamToolDump {
   public String dumpScores(NVRamMap mapJson, SparseMemory memory, Locale locale, boolean displayLabel) {
     StringBuilder bld = new StringBuilder(3000);
 
-    List<NVRamScore> scores  = mapJson.getHighScores();
+    List<NVRamScoreMapping> scores  = mapJson.getHighScores();
     int pos = 1;
     String currentLabel = null;
-    for (NVRamScore score : scores) {
+    for (NVRamScoreMapping score : scores) {
       String lbl = score.formatLabel(false);
       if (displayLabel && lbl != null && !StringUtils.equals(currentLabel, lbl)) {
         if (pos > 1) {
@@ -144,13 +144,13 @@ public class NVRamToolDump {
     }
   }
 
-  private void dumpScores(Appendable bld, String group, List<NVRamScore> scores, 
+  private void dumpScores(Appendable bld, String group, List<NVRamScoreMapping> scores, 
       SparseMemory memory, Locale locale) throws IOException {
     if (scores != null) {
 
       printGroupName(bld, group);
 
-      for (NVRamScore score : scores) {
+      for (NVRamScoreMapping score : scores) {
         String lbl = score.formatLabel(false);
         String value = score.formatHighScore(memory, locale);
         printLine(bld, lbl + ": " + value);

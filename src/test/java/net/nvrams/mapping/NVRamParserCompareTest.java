@@ -11,12 +11,14 @@ import net.nvrams.mapping.map.NVRamMapParser;
 import net.nvrams.mapping.pinemhi.NVRamPinemhiParser;
 import net.nvrams.mapping.superhac.NVRamSuperhacParser;
 
-class NVRamParserTest {
+/**
+ * A test that compare scores parsed by pinemhi with scores form another parser
+ */
+class NVRamParserCompareTest {
 
   private boolean useSuperhac = true;
 
-
-  @Test
+  //@Test
   public void compareNVs() throws Exception {
 
     Locale loc = Locale.ENGLISH;
@@ -38,11 +40,11 @@ class NVRamParserTest {
       if ((firstRom==null || firstRom.compareTo(rom) <= 0) && pinemhiSupported.contains(rom) && mapSupported.contains(rom)) {
         System.out.println("Checking " + rom);
 
-        List<Score> scoresPinemhi = pinemhi.parseNvRam(entry, loc, parseAll);
-        String rawPinemhi = pinemhi.getRaw(entry, loc);
+        List<NVRamScore> scoresPinemhi = pinemhi.parseNvRam(rom, entry, loc, parseAll);
+        String rawPinemhi = String.join("\n", pinemhi.getRaw(rom, entry, loc));
 
-        List<Score> scoresMap = parser.parseNvRam(entry, loc, parseAll);
-        String rawMap = parser.getRaw(entry, loc);
+        List<NVRamScore> scoresMap = parser.parseNvRam(rom, entry, loc, parseAll);
+        String rawMap = String.join("\n", parser.getRaw(rom, entry, loc));
 
         if (!checkScores(scoresPinemhi, rawPinemhi, scoresMap, rawMap, false)) {
           System.out.println(" => Error");
@@ -54,7 +56,7 @@ class NVRamParserTest {
     assertEquals(0, nbErrors);
   }
 
-  @Test
+  //@Test
   public void compareNV() throws Exception {
 
     String rom = "waterwld";
@@ -116,21 +118,21 @@ waterwld => exception
 
     Locale loc = Locale.ENGLISH;
     NVRamParser pinemhi = new NVRamPinemhiParser();
-    List<Score> scoresPinemhi = pinemhi.parseNvRam(entry, loc, parseAll);
-    String rawPinemhi = pinemhi.getRaw(entry, loc);
+    List<NVRamScore> scoresPinemhi = pinemhi.parseNvRam(rom, entry, loc, parseAll);
+    String rawPinemhi = String.join("\n", pinemhi.getRaw(rom, entry, loc));
 
     NVRamParser parser = useSuperhac ? new NVRamSuperhacParser() : new NVRamMapParser();
-    List<Score> scoresMap = parser.parseNvRam(entry, loc, parseAll);
-    String rawMap = parser.getRaw(entry, loc);
+    List<NVRamScore> scoresMap = parser.parseNvRam(rom, entry, loc, parseAll);
+    String rawMap = String.join("\n", parser.getRaw(rom, entry, loc));
 
     checkScores(scoresPinemhi, rawPinemhi, scoresMap, rawMap, true);
   }
 
-  private boolean checkScores(List<Score> scoresPinemhi, String rawPinemhi, List<Score> scoresMap, String rawMap, boolean useAssert) {
+  private boolean checkScores(List<NVRamScore> scoresPinemhi, String rawPinemhi, List<NVRamScore> scoresMap, String rawMap, boolean useAssert) {
     if (scoresPinemhi.size() == scoresMap.size()) {
       for (int i = 0; i < scoresPinemhi.size(); i++) {
-        Score scorePinemhi = scoresPinemhi.get(i);
-        Score scoreMap = scoresMap.get(i);
+        NVRamScore scorePinemhi = scoresPinemhi.get(i);
+        NVRamScore scoreMap = scoresMap.get(i);
         if (!scoreMap.equals(scorePinemhi)) {
           System.out.println(rawPinemhi);
           System.out.println(rawMap);

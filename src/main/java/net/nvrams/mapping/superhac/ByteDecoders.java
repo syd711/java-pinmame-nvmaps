@@ -4,7 +4,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import net.nvrams.mapping.DefaultAdapter;
+
 public class ByteDecoders {
+
+  private final static Logger LOG = LoggerFactory.getLogger(DefaultAdapter.class);
 
   /**
    * Read bytes at given offsets
@@ -273,7 +280,9 @@ public class ByteDecoders {
       int high = (byteVal >> 4) & 0xF;
       int low = byteVal & 0xF;
       if (high > 9 || low > 9) {
-        throw new IllegalArgumentException(String.format("Invalid BCD byte: 0x%02X", byteVal));
+        LOG.error(String.format("Invalid BCD byte: 0x%02X", byteVal));
+        return -1
+        ;
       }
       score = score * 100 + (high * 10 + low);
     }

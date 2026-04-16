@@ -19,7 +19,7 @@ import net.nvrams.mapping.map.NVRamMap;
 import net.nvrams.mapping.map.NVRamMapping;
 import net.nvrams.mapping.map.NVRamMappings;
 import net.nvrams.mapping.map.NVRamRegion;
-import net.nvrams.mapping.map.NVRamScore;
+import net.nvrams.mapping.map.NVRamScoreMapping;
 import net.nvrams.mapping.map.Nibble;
 import net.nvrams.mapping.map.SparseMemory;
 
@@ -73,8 +73,8 @@ public class NVRamToolHexDump {
         String value = StringUtils.defaultString(rm.formatEntry(memory, locale), rm.getDefaultVal());
         text = (lbl != null ? lbl + ": " : "") + value;
       } 
-      else if (mappingObj instanceof NVRamScore) {
-        NVRamScore score = (NVRamScore) mappingObj;
+      else if (mappingObj instanceof NVRamScoreMapping) {
+        NVRamScoreMapping score = (NVRamScoreMapping) mappingObj;
         count = score.offsets().size();
         String lv = score.formatHighScore(memory, locale);
         text = lv;
@@ -115,9 +115,9 @@ public class NVRamToolHexDump {
     }
   }
 
-  private void fillMappings(Map<Integer,Object> entryMap, List<NVRamScore> scores) {
+  private void fillMappings(Map<Integer,Object> entryMap, List<NVRamScoreMapping> scores) {
     if (scores != null) {
-      for (NVRamScore m : scores) {
+      for (NVRamScoreMapping m : scores) {
         List<Integer> offs = m.offsets();
         entryMap.put(offs.get(0), m);
       }

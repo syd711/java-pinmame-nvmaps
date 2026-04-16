@@ -373,6 +373,47 @@ public class NVRamMapping extends NVRamObject {
     return value;
   }
 
+  public String getTextValue(SparseMemory memory) {
+    if (encoding == null) {
+      return null;
+    }
+
+    byte[] ba = getBytes(memory);
+    if (ba == null) {
+      return null;
+    }
+
+    if ("ch".equals(encoding)) {
+      StringBuilder result = new StringBuilder();
+      String charMap = memory.getCharMap();
+      for (byte b : ba) {
+        int bInt = b & 0xFF;
+        if (charMap != null) {
+          result.append(bInt < charMap.length() ? charMap.charAt(bInt) : "?");
+        } else if (bInt == 0 && !"ignore".equals(StringUtils.defaultString(nullVal, "ignore"))) {
+          break;
+        } else {
+          result.append((char) bInt);
+        }
+      }
+      if (result.toString().equals(defaultVal)) {
+        return null;
+      }
+      return result.toString();
+    } 
+    else if ("raw".equals(encoding)) {
+      StringBuilder sb = new StringBuilder();
+      for (byte b : ba) {
+        if (sb.length() > 0) {
+          sb.append(" ");
+        }
+        sb.append(String.format("%02x", b & 0xFF));
+      }
+      return sb.toString();
+    } 
+    return "[?" + encoding + "?]";
+  }
+
   public void setValue(NVRamMap mapJson, SparseMemory memory, Object value) {
     if ("dipsw".equals(encoding)) {
       int intVal = ((Number) value).intValue();
@@ -490,6 +531,7 @@ public class NVRamMapping extends NVRamObject {
 
   @SuppressWarnings("unchecked")
   public String formatEntry(SparseMemory memory, Locale locale) {
+
     if (encoding == null) {
       return null;
     }

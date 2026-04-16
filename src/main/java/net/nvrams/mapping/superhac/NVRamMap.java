@@ -1,20 +1,20 @@
 package net.nvrams.mapping.superhac;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import net.nvrams.mapping.Score;
+import net.nvrams.mapping.NVRamScore;
 
-public class NVRamMap {
+public class NVRamMap implements NVRamScoreDefinition {
 
   @JsonProperty("decoder")
   private String decoder;
@@ -31,11 +31,11 @@ public class NVRamMap {
   @JsonProperty("zero_byte")
   private Integer zeroByte;
 
-  @JsonProperty("offsets")
-  private List<Integer> offsets;
-
   @JsonProperty("zero_if_gte")
   private Integer zeroIfGte;
+
+  @JsonProperty("offsets")
+  private List<Integer> offsets;
 
   @JsonProperty("digit_offset")
   private Integer digitOffset = 0;
@@ -51,33 +51,75 @@ public class NVRamMap {
 
   //--------------------------------------------------
 
-  public List<Score> parseScores(byte[] data, boolean parseAll) {
-    List<Score> scores = new ArrayList<>();
-    iterate(data, parseAll, score -> {
-      scores.add(score);
-    });
+  public List<NVRamScore> parseScores(byte[] data, Locale locale, boolean parseAll) throws IOException {
+    List<NVRamScore> scores = new ArrayList<>();
+    iterate((scoreEntry, title) -> {
+        NVRamScore sc = scoreEntry.getScore(data, title, locale, oneBased, zeroByte, zeroIfGte);
+        if (sc != null && (parseAll || sc.getScore() != null)) {
+          scores.add(sc);
+          return 1;
+        }
+        return 0;
+      }, parseAll);
     return scores;
   }
 
-  public String getRaw(byte[] data, Locale locale) {
-    StringBuilder raw = new StringBuilder();
+  public List<NVRamScore> parseRaw(List<String> lines, Locale locale, boolean parseAll) throws IOException {
+    Iterator<String> linesIterator = lines.iterator();
+    List<NVRamScore> scores = new ArrayList<>();
     String[] currentTitle = { null };
-    iterate(data, true, score -> {
-      if (!StringUtils.equals(currentTitle[0], score.getLabel())) {
-        if (raw.length() > 0) {
-          raw.append("\n");
+    iterate((scoreEntry, title) -> {
+        if (!StringUtils.equals(currentTitle[0], title)) {
+          if (scores.size() > 0) {
+            // read blank line
+            readLine(linesIterator, "");
+          }
+          if (StringUtils.isNotEmpty(title)) {
+            readLine(linesIterator, title);
+          }
+          currentTitle[0] = title;
         }
-        if (StringUtils.isNotEmpty(score.getLabel())) {
-          raw.append(score.getLabel()).append("\n");
+        // read the score
+        NVRamScore sc = scoreEntry.getScore(linesIterator, title, locale);
+        if (sc != null && (parseAll || sc.getScore() != null)) {
+          scores.add(sc);
+          return 1;
         }
-      }
-      raw.append(score.toRaw(locale)).append("\n");
-      currentTitle[0] = score.getLabel();
-    });
-    return raw.toString();
+        return 0;
+      }, 
+      parseAll);
+    return scores;
   }
 
-  private void iterate(byte[] data, boolean parseAll, Consumer<Score> scores) {
+
+  public List<String> getRaw(byte[] data, Locale locale) throws IOException {
+    List<String> raw = new ArrayList<>();
+    String[] currentTitle = { null };
+    iterate((scoreEntry, title) -> {
+        if (!StringUtils.equals(currentTitle[0], title)) {
+          if (raw.size() > 0) {
+            raw.add("");
+          }
+          if (StringUtils.isNotEmpty(title)) {
+            raw.add(title);
+          }
+          currentTitle[0] = title;
+        }
+
+        NVRamScore sc = scoreEntry.getScore(data, title, locale, true, zeroByte, zeroIfGte);
+        if (sc != null) {
+          raw.add(sc.toRaw(locale));
+          return 1;
+        }
+        return 0;
+      }, true);
+    return raw;
+  }
+
+  /**
+   * Iterate on map and process <NVRamEntry, title>
+   */
+  private void iterate(NVRamScoreDefinitionProcessor scores, boolean parseAll) throws IOException {
 
     Map<String, Object> _settings = new HashMap<>();
     if (settings != null) {
@@ -85,28 +127,12 @@ public class NVRamMap {
     }
     _settings.put("buyins", parseAll);
 
-    int nbScore = 0;
+    int nbScores = 0;
     switch (decoder) {
-      case "single_bcd_score":
-        nbScore += addScore(scores, ScoreDecoders.decodeSingleBcdScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits)));
-        break;
-      case "single_bcd_score_x10":
-        nbScore += addScore(scores, 10 * ScoreDecoders.decodeSingleBcdScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits)));
-        break;
-      case "single_digit_score":
-        nbScore += addScore(scores, ScoreDecoders.decodeSingleDigitScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits), digitOffset, zeroByte));
-        break;
-      case "single_digit_score_x10":
-        nbScore += addScore(scores, 10 * ScoreDecoders.decodeSingleDigitScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits), digitOffset, zeroByte));
-        break;
-      case "single_high_nibble_score":
-        nbScore += addScore(scores, ScoreDecoders.decodeSingleHighNibbleScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits), zeroByte, zeroIfGte));
-        break;
-      case "single_high_nibble_score_x10":
-        nbScore += addScore(scores, 10 * ScoreDecoders.decodeSingleHighNibbleScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits), zeroByte, zeroIfGte));
-        break;
       case "leaderboard_bcd":
-        nbScore += addScores(scores, data, entries, "HIGH SCORES", parseAll);
+        for (NVRamEntry entry : entries) {
+          nbScores += scores.process(entry, "HIGHEST SCORES");
+        }
         break;
       case "mixed_leaderboard":
         // FIXME should not be needed but today some sections are redundant
@@ -116,15 +142,23 @@ public class NVRamMap {
           if (!section.isEnabled(_settings)) {
             break;
           }
-          if (nbScore > 3 && !parseAll) {
+          if (nbScores > 3 && !parseAll) {
             break;
           }
-          nbScore += addScores(scores, data, section.getEntries(), section.getTitle(), parseAll);
+          for (NVRamEntry entry : section.getEntries()) {
+            nbScores += scores.process(entry, section.getTitle());
+          }
         }
         break;
       default:
-        throw new IllegalArgumentException("No decoder registered or decoder unknown: " + decoder);
+        // other decoders are single score cases
+        nbScores += scores.process(this, "HIGHEST SCORE");
     }
+  }
+
+  @FunctionalInterface
+  public static interface NVRamScoreDefinitionProcessor {
+    public int process(NVRamScoreDefinition scoreDefinition, String title) throws IOException;
   }
 
   /**
@@ -145,22 +179,59 @@ public class NVRamMap {
     }
   }
 
-  private int addScore(Consumer<Score> scores, long decodedScore) {
-    Score sc = new Score(null,  decodedScore, -1, "HIGHEST SCORE");
-    scores.accept(sc);
-    return 1;
+  public static String readLine(Iterator<String> linesIterator, String expected) {
+    if (linesIterator.hasNext()) {
+      String line = linesIterator.next();
+      // when expected is null, just read 
+      if (expected != null && !StringUtils.equals(line, expected)) {
+        throw new RuntimeException("Wrong line '" + line + "'', expected '" + expected + "'");
+      }
+      return line;
+    }
+    // else, end reached
+    if (expected != null) {
+      throw new RuntimeException("No more line to process, expected '" + expected + "'");
+    }
+    else {
+      throw new RuntimeException("No more line to process, expected at least one");
+    }
   }
 
-  private int addScores(Consumer<Score> scores, byte[] data, List<NVRamEntry> entries, String title, boolean parseAll) {
-    int nbScores = 0;
-    for (NVRamEntry entry : entries) {
-      Score sc = entry.getScore(data, title, oneBased, zeroByte, zeroByte);
-      if (sc != null && (parseAll || sc.getScore() != null)) {
-        scores.accept(sc);
-        nbScores++;
-      }
+  //--------------------------------------------------
+  // Implementation of NVRamScoreDefinition
+
+  @Override
+  public NVRamScore getScore(Iterator<String> lines, String title, Locale locale) {
+    String line = readLine(lines, null);
+    return NVRamScore.fromRaw(line, title, null);
+  }
+
+  @Override
+  public NVRamScore getScore(byte[] data, String title, Locale locale, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
+    long scoreValue = 0;
+    switch (decoder) {
+      case "single_bcd_score":
+        scoreValue = ScoreDecoders.decodeSingleBcdScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits));
+        break;
+      case "single_bcd_score_x10":
+        scoreValue = 10 * ScoreDecoders.decodeSingleBcdScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits));
+        break;
+      case "single_digit_score":
+        scoreValue = ScoreDecoders.decodeSingleDigitScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits), digitOffset, zeroByte);
+        break;
+      case "single_digit_score_x10":
+        scoreValue = 10 * ScoreDecoders.decodeSingleDigitScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits), digitOffset, zeroByte);
+        break;
+      case "single_high_nibble_score":
+        scoreValue = ScoreDecoders.decodeSingleHighNibbleScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits), zeroByte, zeroIfGte);
+        break;
+      case "single_high_nibble_score_x10":
+        scoreValue = 10 * ScoreDecoders.decodeSingleHighNibbleScore(ByteDecoders.readOffsets(data, offsets, oneBased, reverseDigits), zeroByte, zeroIfGte);
+        break;
+      default:
+        throw new IllegalArgumentException("No decoder registered or decoder unknown: " + decoder);
     }
-    return nbScores;
+    return new NVRamScore(null,  scoreValue, -1, title);
   }
 
   //--------------------------------------------------

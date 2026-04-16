@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,16 +28,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import net.nvrams.mapping.NVRamParser;
-import net.nvrams.mapping.Score;
+import net.nvrams.mapping.NVRamScore;
 
 /**
  * Main class for parsing PinMAME .nv files using NVRAM maps.
- * This is a port in java of https://github.com/tomlogic/py-pinmame-nvmaps/blob/main/nvram_parser.py 
+ * This is a modified port in java of https://github.com/tomlogic/py-pinmame-nvmaps/blob/main/nvram_parser.py 
  * 
  * How to use:
  * - create NVRamParser
- * - use getMap(nvfile, rom) to retrieve a NVRamMap definition that is the downloaded and parsed NVRAm Map
- * - use setNvram(mapJson, bytes) to retrieve a SparseMemory object that is the NV file parsed
+ * - use getMap(rom) to retrieve a NVRamMap definition that is the downloaded and parsed NVRAm Map
+ * - use getMemory(mapJson, bytes) to retrieve a SparseMemory object that is the NV file parsed
  * - use tools like NVRamToolDump to dump the content of the NVRam
  * 
  * see NVRam Map structure
@@ -78,23 +79,24 @@ public class NVRamMapParser implements NVRamParser {
     this.mapFolder = root;
   }
   
+  //------------
   @Override
-  public List<Score> parseNvRam(File nvRam, Locale locale, boolean parseAll) throws IOException {
-    String rom = romFromNv(nvRam);
+  public List<NVRamScore> parseNvRam(String rom, File nvRam, Locale locale, boolean parseAll) throws IOException {
     NVRamMap mapJson = getMap(rom);
     byte[] data = Files.readAllBytes(nvRam.toPath());
     SparseMemory memory = getMemory(mapJson, data);
 
-    List<NVRamScore> scoreDefs = mapJson.getHighScores();
-    List<Score> scores = new ArrayList<>();
+    List<NVRamScoreMapping> scoreDefs = mapJson.getHighScores();
+    List<NVRamScore> scores = new ArrayList<>();
     if (scoreDefs != null) {
       int position = 1;
-      for (NVRamScore score : scoreDefs) {
+      for (NVRamScoreMapping score : scoreDefs) {
         String lbl = score.formatLabel(false);
         if (parseAll || filter(lbl)) {
-          String initials = score.formatInitials(memory, locale);
+          boolean hasPosition = scoreDefs.size() > 1;
+          String initials = score.getInitials(memory);
           Long value = score.getValue(memory);
-          Score sc = new Score(initials, value, position++, lbl);
+          NVRamScore sc = new NVRamScore(initials, value, hasPosition? position++: -1, lbl);
           sc.setRawScore(score.formatHighScore(memory, locale));
           scores.add(sc);
         }
@@ -103,47 +105,106 @@ public class NVRamMapParser implements NVRamParser {
     return scores;
   }
 
-  private boolean filter(String lbl) {
-    return !StringUtils.containsIgnoreCase(lbl, "BUY-IN")
-        && !StringUtils.containsIgnoreCase(lbl, "BUYIN");
-  }
-
+  //------------
   @Override
-  public String getRaw(File nvRam, Locale locale) throws IOException {
-    String rom = romFromNv(nvRam);
+  public List<NVRamScore> parseRaw(String rom, List<String> lines, Locale locale, boolean parseAll) throws IOException {
     NVRamMap mapJson = getMap(rom);
-    byte[] data = Files.readAllBytes(nvRam.toPath());
-    SparseMemory memory = getMemory(mapJson, data);
 
-    StringBuilder raw = new StringBuilder();
-
-    getScoresRaw(memory, raw, mapJson.getHighScores(), locale);
-    getScoresRaw(memory, raw, mapJson.getModeChampions(), locale);
-
-    return raw.toString();
+    Iterator<String> linesIterator = lines.iterator();
+    List<NVRamScore> scores = new ArrayList<>();
+    parseScoresRaw(scores, mapJson.getHighScores(), linesIterator, locale, parseAll);
+    if (parseAll) {
+      parseScoresRaw(scores, mapJson.getModeChampions(), linesIterator, locale, parseAll);
+    }
+    return scores;
   }
 
-  private void getScoresRaw(SparseMemory memory, StringBuilder raw, List<NVRamScore> scoreDefs, Locale locale) {
+  private void parseScoresRaw(List<NVRamScore> scores, List<NVRamScoreMapping> scoreDefs,
+                              Iterator<String> linesIterator, Locale locale, boolean parseAll) throws IOException {
     if (scoreDefs != null) {
-      int position = 1;
       String currentLabel = null;
-      for (NVRamScore score : scoreDefs) {
+      for (NVRamScoreMapping score : scoreDefs) {
         String lbl = score.formatLabel(false);
         lbl = normalize(lbl, locale);
+        // new section
         if (!StringUtils.equals(currentLabel, lbl)) {
-          if (raw.length() > 0) {
-            raw.append("\n");
+          if (scores.size() > 0) {
+            // read blank line
+            readLine(linesIterator, "");
           }
-          raw.append(lbl).append("\n");
+          // read label from lines and check this is same lbl
+          readLine(linesIterator, lbl);
           currentLabel = lbl;
         }
 
-        raw.append(position++).append (") ").append(score.formatHighScore(memory, locale)).append("\n");
+        String line = readLine(linesIterator, null);
+        if (parseAll || filter(lbl)) {
+          // turn line in score
+          NVRamScore sc = NVRamScore.fromRaw(line, currentLabel, locale);
+          scores.add(sc);
+        }
       }
     }
   }
 
-  private static final Pattern patternIndex = Pattern.compile("#\\d");
+  private String readLine(Iterator<String> linesIterator, String expected) throws IOException {
+    if (linesIterator.hasNext()) {
+      String line = linesIterator.next();
+      // when expected is null, just read 
+      if (expected != null && !StringUtils.equals(line, expected)) {
+        throw new IOException("Wrong line '" + line + "'', expected '" + expected + "'");
+      }
+      return line;
+    }
+    // else, end reached
+    if (expected != null) {
+      throw new IOException("No more line to process, expected '" + expected + "'");
+    }
+    else {
+      throw new IOException("No more line to process, expected at least one");
+    }
+  }
+
+  //------------
+  @Override
+  public List<String> getRaw(String rom, File nvRam, Locale locale) throws IOException {
+    NVRamMap mapJson = getMap(rom);
+    byte[] data = Files.readAllBytes(nvRam.toPath());
+    SparseMemory memory = getMemory(mapJson, data);
+
+    List<String> raw = new ArrayList<>();
+
+    getScoresRaw(raw, mapJson.getHighScores(), memory, locale);
+    getScoresRaw(raw, mapJson.getModeChampions(), memory, locale);
+
+    return raw;
+  }
+
+  private void getScoresRaw(List<String> raw, List<NVRamScoreMapping> scoreDefs, SparseMemory memory, Locale locale) {
+    if (scoreDefs != null) {
+      int position = 1;
+      String currentLabel = null;
+      for (NVRamScoreMapping score : scoreDefs) {
+        String lbl = score.formatLabel(false);
+        lbl = normalize(lbl, locale);
+        if (!StringUtils.equals(currentLabel, lbl)) {
+          if (raw.size() > 0) {
+            raw.add("");
+          }
+          raw.add(lbl);
+          currentLabel = lbl;
+        }
+
+        boolean hasPosition = scoreDefs.size() > 1;
+        String line = (hasPosition ? position++ + ") ": "") + score.formatHighScore(memory, locale);
+        raw.add(line);
+      }
+    }
+  }
+
+  //----------------------------------------------------
+
+  private static final Pattern patternIndex = Pattern.compile("#\\d+");
 
   private String[] ignoredLabels = {
       "FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", "SEVENTH", "EIGHTH", "NINETH", "TENTH",
@@ -156,9 +217,18 @@ public class NVRamMapParser implements NVRamParser {
         return "HIGHEST SCORES";
       }
     }
-    // Else do some cleanings
+    // If label contains #1, remove this part
     lbl = patternIndex.matcher(lbl).replaceFirst("");
-    return lbl.trim().toUpperCase(locale);
+    lbl = lbl.trim().toUpperCase(locale);
+    if (StringUtils.isEmpty(lbl)) {
+      return "HIGHEST SCORES";
+    }
+    return lbl;
+  }
+
+  private boolean filter(String lbl) {
+    return !StringUtils.containsIgnoreCase(lbl, "BUY-IN")
+        && !StringUtils.containsIgnoreCase(lbl, "BUYIN");
   }
 
   //--------------------------
@@ -270,7 +340,7 @@ public class NVRamMapParser implements NVRamParser {
 
   public List<String> highScores(NVRamMap mapJson, SparseMemory memory, boolean useShortLabels, Locale locale) {
     List<String> scores = new ArrayList<>();
-    for (NVRamScore entry : mapJson.getHighScores()) {
+    for (NVRamScoreMapping entry : mapJson.getHighScores()) {
       String score = entry.formatHighScore(memory, locale);
       if (score != null) {
         scores.add(entry.formatLabel(useShortLabels) + ": " + score);
@@ -315,16 +385,6 @@ public class NVRamMapParser implements NVRamParser {
       LOG.info("Rom Cache loaded with {} roms", _cacheMapForRom.size());
     }
   }
-
-  public String romFromNv(File nvPath) throws IOException {
-    String rom = nvPath.getName();
-    int dotIndex = rom.lastIndexOf('.');
-    if (dotIndex > 0) rom = rom.substring(0, dotIndex);
-    int hyphenIndex = rom.indexOf('-');
-    if (hyphenIndex > 0) rom = rom.substring(0, hyphenIndex);
-    return rom;
-  }
-
 
   public String mapPathForRom(String rom) throws IOException {
     ensureCacheMapForRom();

@@ -1,15 +1,17 @@
 package net.nvrams.mapping.superhac;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-import net.nvrams.mapping.Score;
+import net.nvrams.mapping.NVRamScore;
 
-public class NVRamEntry {
+public class NVRamEntry implements NVRamScoreDefinition {
 
   private Integer rank;
   @JsonProperty("rank")
@@ -72,8 +74,37 @@ public class NVRamEntry {
 
   //-----------------------------------------
 
+  @Override
+  public NVRamScore getScore(Iterator<String> lines, String globalTitle, Locale locale) {
 
-  public Score getScore(byte[] data, String globalTitle, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
+    int position = rank != null ? rank.intValue() : -1;
+    String ttle = StringUtils.defaultString(title, globalTitle);
+
+    // No score_offsets and no entry_decoder: plain name entry
+    if (scoreOffsets == null && entryDecoder == null) {
+      return nameOffsets != null ? new NVRamScore(NVRamMap.readLine(lines, null), (Long) null, position, ttle) : null;
+    }
+
+    if (entryDecoder != null) {
+      /*String line =*/ NVRamMap.readLine(lines, null);
+      // don't know how to decode specific lines
+      return null;
+    }
+
+    // Standard score entry
+    String line = NVRamMap.readLine(lines, null);
+    NVRamScore sc = NVRamScore.fromRaw(line, ttle, locale);
+    if (sc != null) {
+      sc.setSuffix(getValueSuffix());
+    }
+    //parsed.valuePrefix = (String) entry.get("value_prefix");
+    //parsed.valueSuffix = (String) entry.get("value_suffix");
+    //parsed.valueFormat = (String) entry.get("value_format");
+    return sc;
+  }
+
+  @Override
+  public NVRamScore getScore(byte[] data, String globalTitle, Locale locale, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
 
     String initials = "";
     if (nameOffsets != null) {
@@ -86,11 +117,11 @@ public class NVRamEntry {
 
     // No score_offsets and no entry_decoder: plain name entry
     if (scoreOffsets == null && entryDecoder == null) {
-      return StringUtils.isNotEmpty(initials) ? new Score(initials, (Long) null, position, ttle) : null;
+      return StringUtils.isNotEmpty(initials) ? new NVRamScore(initials, (Long) null, position, ttle) : null;
     }
 
     if (entryDecoder != null) {
-      Score sc = EntryDecoders.dispatchEntryDecoder(data, this, initials, position, ttle, oneBased, zeroByte, zeroIfGte);
+      NVRamScore sc = EntryDecoders.dispatchEntryDecoder(data, this, initials, position, ttle, oneBased, zeroByte, zeroIfGte);
       return !ByteDecoders.cleanText(initials).isEmpty() || StringUtils.isNotEmpty(sc.getScoreText()) ? sc : null;
     }
 
@@ -99,10 +130,11 @@ public class NVRamEntry {
     long decodedScore = ScoreDecoders.decodeScoreBytes(scoreBytes, StringUtils.defaultString(scoreDecoder, "bcd"), this, zeroByte, zeroIfGte);
 
     if (skipScoreValues != null && skipScoreValues.contains(decodedScore)) {
-      return null;
+      // Ignore the value but keep the line
+      return new NVRamScore(initials, (Long) null, position, ttle);
     }
 
-    Score sc = new Score(initials, decodedScore, position, ttle);
+    NVRamScore sc = new NVRamScore(initials, decodedScore, position, ttle);
     sc.setSuffix(getValueSuffix());
     //parsed.valuePrefix = (String) entry.get("value_prefix");
     //parsed.valueSuffix = (String) entry.get("value_suffix");

@@ -23,7 +23,7 @@ import com.google.gson.internal.Streams;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonWriter;
 
-import net.nvrams.mapping.Score;
+import net.nvrams.mapping.NVRamScore;
 import net.nvrams.mapping.decoder.NVRamToolDecoder.SearchResult;
 
 public class NVRamToolMapGenerator {
@@ -38,7 +38,7 @@ public class NVRamToolMapGenerator {
 
   
   public void generateHighscores(String rom, VpsTable table, boolean useHexForPosition,
-      LinkedHashMap<Score, SearchResult> selectedScores, LinkedHashMap<String, SearchResult> checksums) throws IOException {
+      LinkedHashMap<NVRamScore, SearchResult> selectedScores, LinkedHashMap<String, SearchResult> checksums) throws IOException {
 
     // read or create an existing map
     JsonObject map = readOrCreateMap(rom, table);
@@ -54,8 +54,8 @@ public class NVRamToolMapGenerator {
     int index = 1;
     Map<String, Integer> indexMap = new HashMap<>();
 
-    for (Entry<Score, SearchResult> sr : selectedScores.entrySet()) {
-      Score sc = sr.getKey();
+    for (Entry<NVRamScore, SearchResult> sr : selectedScores.entrySet()) {
+      NVRamScore sc = sr.getKey();
       SearchResult result = sr.getValue();
 
       // generate the name of the score

@@ -43,14 +43,14 @@ public class NVRamMap extends NVRamObject {
 
   // The traditional high score table that would usually start with the Grand Champion and then proceed through First Place to Fourth Place.
   @JsonProperty("high_scores")
-  private List<NVRamScore> highScores;
+  private List<NVRamScoreMapping> highScores;
 
   // Another array of descriptors with recognition of other in-game accomplishments.
   @JsonProperty("mode_champions")
-  private List<NVRamScore> modeChampions;
+  private List<NVRamScoreMapping> modeChampions;
 
   @JsonProperty("more_mode_champions")
-  private List<NVRamScore> moreModeChampions;
+  private List<NVRamScoreMapping> moreModeChampions;
 
   @JsonProperty("checksum8")
   private List<NVRamMapping> checksum8;
@@ -161,11 +161,11 @@ public class NVRamMap extends NVRamObject {
     return adjustments;
   }
 
-  public List<NVRamScore> getHighScores() {
+  public List<NVRamScoreMapping> getHighScores() {
     return highScores;
   }
 
-  public List<NVRamScore> getModeChampions() {
+  public List<NVRamScoreMapping> getModeChampions() {
     return modeChampions;
   }
 

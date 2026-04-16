@@ -20,12 +20,12 @@ import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 
-import net.nvrams.mapping.Score;
+import net.nvrams.mapping.NVRamScore;
 import net.nvrams.mapping.decoder.SimpleLogger.LEVEL;
 import net.nvrams.mapping.map.ChecksumMapping;
 import net.nvrams.mapping.map.NVRamMap;
 import net.nvrams.mapping.map.NVRamMapParser;
-import net.nvrams.mapping.map.NVRamScore;
+import net.nvrams.mapping.map.NVRamScoreMapping;
 import net.nvrams.mapping.map.SparseMemory;
 import net.nvrams.mapping.pinemhi.NVRamPinemhiParser;
 import net.nvrams.mapping.tools.NVRamToolDump;
@@ -108,7 +108,7 @@ public class NVRamToolDecoder {
       LOG.info(txt);
 
       if (!map.getHighScores().isEmpty()) {
-        NVRamScore score = map.getHighScores().get(0);
+        NVRamScoreMapping score = map.getHighScores().get(0);
         score.reset(777777);
       }
 
@@ -187,13 +187,13 @@ public class NVRamToolDecoder {
     // load pinhemi and parse scores
     LOG.warn("...get scores from Pinemhi");
   
-    List<Score> scores = getScoresFromPinemhi(entry, rom, true);
+    List<NVRamScore> scores = getScoresFromPinemhi(entry, rom, true);
     if (scores.isEmpty()) {
       LOG.warn("Found empty highscore for nvram {} !!!", entry.getAbsolutePath());
       return;
     }
     // cache of parsed pinemhi scores (nvram > scores)
-    Map<File, List<Score>> cacheScores = new HashMap<>();
+    Map<File, List<NVRamScore>> cacheScores = new HashMap<>();
 
     //-------------------------------------------
 
@@ -201,7 +201,7 @@ public class NVRamToolDecoder {
     byte[] bytes = Files.readAllBytes(entry.toPath());
 
     // calculate score mappings, not presuming any score encoding length
-    LinkedHashMap<Score, SearchResult> selectedScores = parseScores(bytes, rom, testFolders, scores, cacheScores, -1);
+    LinkedHashMap<NVRamScore, SearchResult> selectedScores = parseScores(bytes, rom, testFolders, scores, cacheScores, -1);
 
     NVRamToolMapGenerator generator = new NVRamToolMapGenerator();
     if (selectedScores.size() > 0) {
@@ -217,17 +217,17 @@ public class NVRamToolDecoder {
 
   //---------------------------------------------
 
-  private LinkedHashMap<Score, SearchResult> parseScores(byte[] bytes, String rom, File[] testFolders,
-      List<Score> scores, Map<File, List<Score>> cacheScores, int forcedScoreLength) {
+  private LinkedHashMap<NVRamScore, SearchResult> parseScores(byte[] bytes, String rom, File[] testFolders,
+      List<NVRamScore> scores, Map<File, List<NVRamScore>> cacheScores, int forcedScoreLength) {
     // an array to mark bytes that are consumed
     boolean[] used = new boolean[bytes.length];
-    LinkedHashMap<Score, SearchResult> selectedScores = new LinkedHashMap<>();
+    LinkedHashMap<NVRamScore, SearchResult> selectedScores = new LinkedHashMap<>();
 
-    Score previousScore = null;
+    NVRamScore previousScore = null;
     SearchResult previousResult = null;
 
     for (int s = 0; s < scores.size(); s++) {
-      final Score sc = scores.get(s);
+      final NVRamScore sc = scores.get(s);
       final int scPos = s;
 
       LOG.warn("...checking score \"{}\", position {}", sc, scPos);
@@ -259,7 +259,7 @@ public class NVRamToolDecoder {
           return true;
         });
 
-        final Score _previousScore = previousScore;
+        final NVRamScore _previousScore = previousScore;
         final SearchResult _previousResult = previousResult;
         result = findOrContinue(initials, positions, () -> {
           // if there is a position contiguous to the previous one for same score label, use this one
@@ -293,7 +293,7 @@ public class NVRamToolDecoder {
               LOG.warn("    check with nvram {}...", altentry.getAbsolutePath());
 
               // parse and cache for alternative nvrams
-              List<Score> altscores = cacheScores.get(altentry);
+              List<NVRamScore> altscores = cacheScores.get(altentry);
               if (altscores == null) {
                 altscores = getScoresFromPinemhi(altentry, rom, false);
                 cacheScores.put(altentry, altscores);
@@ -301,7 +301,7 @@ public class NVRamToolDecoder {
               // check nvrams are compatible, else ignore
               if (altscores.size() == scores.size()) {
                 // get the associated scores in this alternate nvram
-                Score altsc = altscores.get(scPos);
+                NVRamScore altsc = altscores.get(scPos);
                 // Load alternate nvram file
                 try {
                   byte[] altbytes = Files.readAllBytes(altentry.toPath());
@@ -411,7 +411,7 @@ public class NVRamToolDecoder {
     }
   }
 
-  private @NonNull List<Score> getScoresFromPinemhi(File nvramFile, String rom, boolean displayResult) {
+  private @NonNull List<NVRamScore> getScoresFromPinemhi(File nvramFile, String rom, boolean displayResult) {
     if (!nvramFile.exists()) {
       return Collections.emptyList();
     }
@@ -421,10 +421,10 @@ public class NVRamToolDecoder {
     NVRamPinemhiParser pinemhiParser = new NVRamPinemhiParser();
     try {
       if (displayResult) {
-        String raw = pinemhiParser.getRaw(nvramFile, locale);
-        LOG.warn("\n" + raw);
+        List<String> raw = pinemhiParser.getRaw(rom, nvramFile, locale);
+        LOG.warn("\n" + String.join("\n", raw));
       }
-      List<Score> scores = pinemhiParser.parseNvRam(nvramFile, locale, true);
+      List<NVRamScore> scores = pinemhiParser.parseNvRam(rom, nvramFile, locale, true);
       return scores;
     }
     catch (IOException ioe) {
@@ -435,20 +435,20 @@ public class NVRamToolDecoder {
 
   //--------------------------------------------------
 
-  private LinkedHashMap<String, SearchResult> parseChecksum(byte[] bytes, LinkedHashMap<Score, SearchResult> selectedScores) {
+  private LinkedHashMap<String, SearchResult> parseChecksum(byte[] bytes, LinkedHashMap<NVRamScore, SearchResult> selectedScores) {
     LinkedHashMap<String, SearchResult> results = new LinkedHashMap<>();
 
     // group all scores by the label of the score
-    Map<String, List<Score>> groupByLabel = selectedScores.keySet().stream()
+    Map<String, List<NVRamScore>> groupByLabel = selectedScores.keySet().stream()
               .collect(Collectors.groupingBy(sc -> StringUtils.defaultString(sc.getLabel(), "High Scores"), Collectors.toList()));
 
-    for (Map.Entry<String, List<Score>> e : groupByLabel.entrySet()) {
+    for (Map.Entry<String, List<NVRamScore>> e : groupByLabel.entrySet()) {
       String label = e.getKey();
-      List<Score> scores = e.getValue();
+      List<NVRamScore> scores = e.getValue();
 
       int startPosition = Integer.MAX_VALUE;
       int endPosition = 0;
-      for (Score sc : scores) {
+      for (NVRamScore sc : scores) {
         SearchResult res = selectedScores.get(sc);
         if (res.initialPosition >= 0) {
           startPosition = Math.min(startPosition, res.initialPosition);

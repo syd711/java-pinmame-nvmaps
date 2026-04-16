@@ -20,7 +20,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import net.nvrams.mapping.NVRamParser;
-import net.nvrams.mapping.Score;
+import net.nvrams.mapping.NVRamScore;
 
 /**
  * 
@@ -34,7 +34,7 @@ public class NVRamSuperhacParser implements NVRamParser {
 
   private Map<String, NVRamMap> _cacheMapForRom;
 
-
+  
   @Override
   public List<String> getSupportedNVRams() {
     try {
@@ -46,6 +46,44 @@ public class NVRamSuperhacParser implements NVRamParser {
       return Collections.emptyList();
     }
   }
+
+    @Override
+  public List<String> getRaw(String rom, File nvRam, Locale locale) throws IOException {
+    ensureCacheMapForRom();
+
+    NVRamMap map = _cacheMapForRom.get(rom);
+    if (map != null) {
+      byte[] data = Files.readAllBytes(nvRam.toPath());
+      return map.getRaw(data, locale);
+    }
+    return null;
+  }
+
+  @Override
+  public List<NVRamScore> parseNvRam(String rom, File nvRam, Locale locale, boolean parseAll) throws IOException {
+    ensureCacheMapForRom();
+
+    NVRamMap map = _cacheMapForRom.get(rom);
+    if (map != null) {
+      byte[] data = Files.readAllBytes(nvRam.toPath());
+      return map.parseScores(data, locale, parseAll);
+    }
+    return Collections.emptyList();
+  }
+
+  @Override
+  public List<NVRamScore> parseRaw(String rom, List<String> lines, Locale locale, boolean parseAll) throws IOException {
+    ensureCacheMapForRom();
+
+    NVRamMap map = _cacheMapForRom.get(rom);
+    if (map != null) {
+      return map.parseRaw(lines, locale, parseAll);
+    }
+    return Collections.emptyList();
+  }
+
+
+  //------------------------------
 
   private void ensureCacheMapForRom() throws IOException {
     if (_cacheMapForRom == null) {
@@ -84,31 +122,4 @@ public class NVRamSuperhacParser implements NVRamParser {
   public static interface ProcessStream<T> {
     public T process(InputStream in) throws IOException;
   }
-
-  @Override
-  public List<Score> parseNvRam(File nvRam, Locale locale, boolean parseAll) throws IOException {
-    ensureCacheMapForRom();
-
-    String rom = nvRam.getName().replace(".nv", "");
-    NVRamMap map = _cacheMapForRom.get(rom);
-    if (map != null) {
-      byte[] data = Files.readAllBytes(nvRam.toPath());
-      return map.parseScores(data, parseAll);
-    }
-    return Collections.emptyList();
-  }
-
-  @Override
-  public String getRaw(File nvRam, Locale locale) throws IOException {
-    ensureCacheMapForRom();
-
-    String rom = nvRam.getName().replace(".nv", "");
-    NVRamMap map = _cacheMapForRom.get(rom);
-    if (map != null) {
-      byte[] data = Files.readAllBytes(nvRam.toPath());
-      return map.getRaw(data, locale);
-    }
-    return null;
-  }
-
 }

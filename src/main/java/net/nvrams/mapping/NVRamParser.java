@@ -9,7 +9,10 @@ public interface NVRamParser {
 
   List<String> getSupportedNVRams() throws IOException;
 
-  List<Score> parseNvRam(File nvRam, Locale locale, boolean parseAll) throws IOException;
+  List<String> getRaw(String rom, File nvRam, Locale locale) throws IOException;
 
-  String getRaw(File nvRam, Locale locale) throws IOException;
+  List<NVRamScore> parseRaw(String rom, List<String> lines, Locale locale, boolean parseAll) throws IOException;
+
+  List<NVRamScore> parseNvRam(String rom, File nvRam, Locale locale, boolean parseAll) throws IOException;
+
 }

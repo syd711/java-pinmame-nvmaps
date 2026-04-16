@@ -35,9 +35,9 @@ public class NVRamPinemhiParserTest {
     String rom = "bcats_l5";
     File nvram = new File("nvrams", rom + ".nv");
 
-    List<Score> scores = parser.parseNvRam(nvram, Locale.ENGLISH, false);
+    List<NVRamScore> scores = parser.parseNvRam(rom, nvram, Locale.ENGLISH, false);
     assertEquals(4, scores.size());
-    for (Score sc : scores) {
+    for (NVRamScore sc : scores) {
       System.out.println(sc.toString());
     }
   }
@@ -61,7 +61,7 @@ public class NVRamPinemhiParserTest {
     doTest(adapter, "1)", "TEX 16", 1, "TEX", 16);
     doTest(adapter, "1#", "DAD   267", 1, "DAD", 267);
 
-    doTest(adapter, "1)", "4.000.000", 1, "???", 4000000);
+    doTest(adapter, "1)", "4.000.000", 1, "   ", 4000000);
 
     doTest(adapter, "#1", "???   1.000.000", 1, "???", 1000000);
 
@@ -75,7 +75,7 @@ public class NVRamPinemhiParserTest {
       String line = (posInput + " " + input).replace(".", sep);
 
       assertTrue(adapter.isScoreLine(line));
-      Score s = adapter.createScore("TEST", line);
+      NVRamScore s = adapter.createScore("TEST", line);
       assertEquals(initials, s.getPlayerInitials());
       assertEquals(score, s.getScore());
       assertEquals(rank, s.getPosition());
@@ -84,7 +84,7 @@ public class NVRamPinemhiParserTest {
     for (String sep : seps) {
       String line = (input).replace(".", sep);
       assertTrue(adapter.isTitleScoreLine(line));
-      Score s = adapter.createTitledScore("TEST", line);
+      NVRamScore s = adapter.createTitledScore("TEST", line);
       assertEquals(initials, s.getPlayerInitials());
       assertEquals(score, s.getScore());
     }

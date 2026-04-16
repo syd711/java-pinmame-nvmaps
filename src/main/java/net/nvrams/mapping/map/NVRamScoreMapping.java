@@ -9,7 +9,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Object representing a single entry from a nvram mapping file.
  */
-public class NVRamScore extends NVRamObject {
+public class NVRamScoreMapping extends NVRamObject {
 
   // A label describing this descriptor. 
   @JsonProperty("label")
@@ -73,6 +73,7 @@ public class NVRamScore extends NVRamObject {
     List<String> elements = new ArrayList<>();
     if (initials != null) {
       String formatted = initials.formatEntry(memory, locale);
+      formatted = StringUtils.rightPad(formatted, 3);
       if (formatted != null) elements.add(formatted);
     }
     if (score != null) {
@@ -113,8 +114,13 @@ public class NVRamScore extends NVRamObject {
     return score != null? score.getValue(memory) : null;
   }
 
+  public String getInitials(SparseMemory memory) {
+    return initials != null? initials.getTextValue(memory) : null;
+
+  }
+
+
   public void reset(long value) {
     //TODO implement here
   }
-
 }
