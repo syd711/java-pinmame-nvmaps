@@ -13,6 +13,7 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <superhac.parser.version>v1.0.3</superhac.parser.version>
     </properties>
 
     <dependencies>
@@ -127,6 +128,26 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+            </plugin>
+            <plugin>
+                <groupId>com.googlecode.maven-download-plugin</groupId>
+                <artifactId>download-maven-plugin</artifactId>
+                <version>1.8.1</version>
+                <executions>
+                    <execution>
+                        <id>download-roms-json</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>wget</goal>
+                        </goals>
+                        <configuration>
+                            <url>https://github.com/superhac/pinmame-score-parser/releases/download/${superhac.parser.version}/roms.json</url>
+                            <outputDirectory>${project.basedir}/src/main/resources/net/nvrams/mapping/superhac</outputDirectory>
+                            <outputFileName>roms.json</outputFileName>
+                            <overwrite>true</overwrite>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

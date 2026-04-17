@@ -1,8 +1,15 @@
 # Java samples for PinMAME NVRAM Maps
 
-This small project contains some Java code to parse NVRAM (`.nv`)
+This project contains some Java code to parse NVRAM (`.nv`)
 files from PinMAME, using JSON-based mapping files from the [PinMAME
-NVRAM Maps](https://github.com/tomlogic/pinmame-nvram-maps) project.
+NVRAM Maps](https://github.com/tomlogic/pinmame-nvram-maps) and [Superhac's Score Parser](https://github.com/superhac/pinmame-score-parser) projects.
+
+
+## Requirements
+
+The projects needs 
+- Java 11
+- Maven
 
 ## Setup
 
@@ -32,3 +39,7 @@ Then commit the updated submodule reference:
 git add maps
 git commit -m "Update maps submodule"
 ```
+
+## Building the project
+
+```mvn clean install```

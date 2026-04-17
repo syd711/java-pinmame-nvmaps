@@ -3,8 +3,6 @@ package net.nvrams.mapping.superhac;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,9 +26,6 @@ import net.nvrams.mapping.NVRamScore;
 @Service
 public class NVRamSuperhacParser implements NVRamParser {
   private final static Logger LOG = LoggerFactory.getLogger(NVRamSuperhacParser.class);
-
-  // the root where map file can be downloaded
-  public String mapRoot = "https://github.com/superhac/pinmame-score-parser/releases/download/v1.0.2/roms.json";
 
   private Map<String, NVRamMap> _cacheMapForRom;
 
@@ -87,39 +82,15 @@ public class NVRamSuperhacParser implements NVRamParser {
 
   private void ensureCacheMapForRom() throws IOException {
     if (_cacheMapForRom == null) {
-      String indexUrl = mapRoot;
-      LOG.info("Load cache of rom map from {}", indexUrl);
-
-      _cacheMapForRom  = download(indexUrl, in -> {
+      LOG.info("Load cache of rom map from classpath resources");
+      try (InputStream in = getClass().getResourceAsStream("/net/nvrams/mapping/superhac/roms.json")) {
+        if (in == null) {
+          throw new IOException("roms.json not found in classpath");
+        }
         ObjectMapper mapper = new ObjectMapper();
-        return mapper.readValue(in, new TypeReference<Map<String, NVRamMap>>() {});
-      });
+        _cacheMapForRom = mapper.readValue(in, new TypeReference<Map<String, NVRamMap>>() {});
+      }
       LOG.info("Rom Cache loaded with {} roms", _cacheMapForRom.size());
     }
-  }
-
-
-  public <T> T download(String u, ProcessStream<T> consumer) throws IOException {
-    HttpURLConnection connection = null;
-    try {
-      URL url = new URL(u);
-      connection = (HttpURLConnection) url.openConnection();
-      int code = connection.getResponseCode();
-      if (code==200) {
-        InputStream in = url.openStream();
-        return consumer.process(in);
-      }
-      return null;
-    }
-    finally {
-      if (connection != null) {
-        connection.disconnect();
-      }
-    }
-  }
-
-  @FunctionalInterface
-  public static interface ProcessStream<T> {
-    public T process(InputStream in) throws IOException;
   }
 }
