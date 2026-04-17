@@ -1,0 +1,126 @@
+package net.nvrams.mapping.map;
+
+import java.util.*;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+/**
+ * Object representing a single entry from a nvram mapping file.
+ */
+public class NVRamScoreMapping extends NVRamObject {
+
+  // A label describing this descriptor. 
+  @JsonProperty("label")
+  private String label;
+
+  // An optional, abbreviated label for use when space is limited (like in a game launcher on a DMD). 
+  @JsonProperty("short_label")
+  private String shortLabel;
+
+  @JsonProperty("initials")
+  private NVRamMapping initials;
+  @JsonProperty("score")
+  private NVRamMapping score;
+  @JsonProperty("timestamp")
+  private NVRamMapping timestamp;
+  @JsonProperty("counter")
+  private NVRamMapping counter;
+  @JsonProperty("nth time")
+  private NVRamMapping nthtime;
+
+  //---------------------------------------- Getters only for JSONProperties
+
+  public String getLabel() {
+    return label;
+  }
+
+  public String getShortLabel() {
+    return shortLabel;
+  }
+
+  public NVRamMapping getInitials() {
+    return initials;
+  }
+
+  public NVRamMapping getScore() {
+    return score;
+  }
+
+  public NVRamMapping getTimestamp() {
+    return timestamp;
+  }
+
+  //------------------------------------------------
+
+  public List<Integer> offsets() {
+
+    List<Integer> o = new ArrayList<>();
+    if (initials != null) {
+      o.addAll(initials.offsets());
+    }
+    if (score != null) {
+      o.addAll(score.offsets());
+    }
+    if (timestamp != null) {
+      o.addAll(timestamp.offsets());
+    }
+    return o;
+  }
+
+  public String formatHighScore(SparseMemory memory, Locale locale) {
+    List<String> elements = new ArrayList<>();
+    if (initials != null) {
+      String formatted = initials.formatEntry(memory, locale);
+      formatted = StringUtils.rightPad(formatted, 3);
+      if (formatted != null) elements.add(formatted);
+    }
+    if (score != null) {
+      String formatted = score.formatEntry(memory, locale);
+      if (formatted != null) elements.add(formatted);
+    }
+    if (timestamp != null) {
+      String formatted = timestamp.formatEntry(memory, locale);
+      if (formatted != null) elements.add(formatted);
+    }
+    return elements.isEmpty() ? null : String.join(" ", elements);
+  }
+
+  public String formatScoreLine(SparseMemory memory, Locale locale, int position) {
+    String player = formatInitials(memory, locale);
+    String formatted = score.formatEntry(memory, locale);
+    return "#" + position + " " + player + "   " + formatted;
+  }
+  
+  public String formatInitials(SparseMemory memory, Locale locale) {
+    String lbl = initials != null? initials.formatEntry(memory, locale) : null;
+    if (StringUtils.isBlank(lbl)) {
+      return "???";
+    }
+    return StringUtils.rightPad(lbl.trim(), 3);
+  }
+
+  public String formatLabel(boolean useShortLabel) {
+    String lbl = StringUtils.defaultString(label, "?");
+    if (lbl.startsWith("_")) lbl = null;
+    if (useShortLabel) {
+      if (shortLabel != null) lbl = shortLabel;
+    }
+    return lbl;
+  }
+
+  public Long getValue(SparseMemory memory) {
+    return score != null? score.getValue(memory) : null;
+  }
+
+  public String getInitials(SparseMemory memory) {
+    return initials != null? initials.getTextValue(memory) : null;
+
+  }
+
+
+  public void reset(long value) {
+    //TODO implement here
+  }
+}
