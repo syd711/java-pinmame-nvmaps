@@ -30,20 +30,23 @@ public class NVRamPinemhiParser implements NVRamParser {
   private final static Logger LOG = LoggerFactory.getLogger(NVRamPinemhiParser.class);
 
   private File vpPathAdjusted = null;
+  private List<String> supportedNvRams = null;
 
-  private List<String> titles = List.of("MASTER MAGICIAN", "CHAMPION", "GRAND CHAMPION", "WORLD RECORD", "GREATEST VAMPIRE HUNTER", "GREATEST TIME LORD", "RIVER MASTER", "CLUB CHAMPION", "HIGHEST SCORES", "HIGHEST SCORE", "THE BEST DUDE", "ACE WINGER",
-    // to be added in ScoringDB.json....
-    // che_cho            bop_17                     punchy            punchy
-       "ROAD-TRIP KING", "BILLIONAIRE CLUB MEMBERS", "MY BEST FRIEND", "MY OTHER FRIENDS"
-  );
-
+  private final static List<String> TITLES = Arrays.asList("MASTER MAGICIAN", "CHAMPION", "GRAND CHAMPION", "WORLD RECORD", "GREATEST VAMPIRE HUNTER", "GREATEST TIME LORD",
+      "RIVER MASTER", "CLUB CHAMPION", "HIGHEST SCORES", "THE BEST DUDE", "ACE WINGER",
+      "ROAD-TRIP KING", "BILLIONAIRE CLUB MEMBERS", "MY BEST FRIEND", "MY OTHER FRIENDS");
 
   @Override
   public List<String> getSupportedNVRams() throws IOException {
-    File commandFile = new File("tools", "PINemHi.exe");
-    List<String> commands = Arrays.asList("cmd.exe", "/c", commandFile.getName(), "-lr");
+    if (supportedNvRams == null) {
+      //force the same folder structure as for the Studio Server
+      File commandFile = new File("resources/pinemhi", "PINemHi.exe");
+      List<String> commands = Arrays.asList("cmd.exe", "/c", commandFile.getName(), "-lr");
 
-    return execute(commands, commandFile.getParentFile());
+      this.supportedNvRams = new ArrayList<>();
+      this.supportedNvRams.addAll(execute(commands, commandFile.getParentFile()));
+    }
+    return supportedNvRams;
   }
 
   @Nullable
@@ -53,13 +56,13 @@ public class NVRamPinemhiParser implements NVRamParser {
     return convertOutputToRaw(lines, parseAll);
   }
 
- @Override
+  @Override
   public List<String> getRaw(String rom, @NonNull File nvRam, Locale locale) throws IOException {
     return getLines(nvRam);
   }
 
 
-@Override
+  @Override
   public List<NVRamScore> parseRaw(String rom, List<String> lines, Locale locale, boolean parseAll) throws IOException {
     return convertOutputToRaw(lines, parseAll);
   }
@@ -83,23 +86,23 @@ public class NVRamPinemhiParser implements NVRamParser {
 
   @Nullable
   public List<String> executePINemHi(@NonNull File originalNVRamFile) throws IOException {
-      File commandFile = new File("tools", "PINemHi.exe");
+    File commandFile = new File("tools", "PINemHi.exe");
 
-      // make sure nvram can be found
-      adjustVPPathForEmulator(originalNVRamFile.getParentFile(), true);
+    // make sure nvram can be found
+    adjustVPPathForEmulator(originalNVRamFile.getParentFile(), true);
 
-      String nvRamName = originalNVRamFile.getName().toLowerCase();
-      List<String> commands = Arrays.asList("cmd.exe", "/c", commandFile.getName(), nvRamName);
+    String nvRamName = originalNVRamFile.getName().toLowerCase();
+    List<String> commands = Arrays.asList("cmd.exe", "/c", commandFile.getName(), nvRamName);
 
-      return execute(commands, commandFile.getParentFile());
+    return execute(commands, commandFile.getParentFile());
   }
 
   private List<String> execute(List<String> commands, File dir) throws IOException {
     List<String> lines = new ArrayList<>();
     try {
       ProcessBuilder pb = new ProcessBuilder(commands)
-        .directory(dir)
-        .redirectErrorStream(true);
+          .directory(dir)
+          .redirectErrorStream(true);
       Process process = pb.start();
 
       InputStream stdOut = process.getInputStream();
@@ -112,13 +115,13 @@ public class NVRamPinemhiParser implements NVRamParser {
       }
       process.waitFor();
     }
-    catch(InterruptedException ie) {
+    catch (InterruptedException ie) {
       LOG.error("Process interrupted", ie);
     }
     return lines;
   }
 
-    /**
+  /**
    * Set the path to the nvRamFolder so that nv files can be found
    * Load pinhemi.ini, update the VP path with the provided folder
    * For optimization, do it only if the cached folder is different
@@ -145,13 +148,13 @@ public class NVRamPinemhiParser implements NVRamParser {
         // cache latest adjusted path for optimisation
         vpPathAdjusted = nvRamFolder;
       }
-        catch (Exception e) {
+      catch (Exception e) {
         LOG.error("Failed to update VP path in pinemhi.ini: {}", e.getMessage(), e);
       }
     }
   }
 
-   private static void saveIni(File ini, INIConfiguration iniConfiguration) throws IOException, ConfigurationException {
+  private static void saveIni(File ini, INIConfiguration iniConfiguration) throws IOException, ConfigurationException {
     try (FileWriter fileWriter = new FileWriter(ini)) {
       iniConfiguration.write(fileWriter);
     }
@@ -175,15 +178,15 @@ public class NVRamPinemhiParser implements NVRamParser {
     try {
       List<NVRamScore> scores = new ArrayList<>();
 
-	    String currentTitle = null;
+      String currentTitle = null;
       NVRamScore currentScore = null;
       String currentBuffer = null;
       for (int i = 0; i < lines.size(); i++) {
         String line = lines.get(i).trim();
-      	if (StringUtils.isEmpty(line)) {
+        if (StringUtils.isEmpty(line)) {
           if (currentBuffer != null) {
             currentScore = createTitledScore(currentTitle, currentBuffer);
-          	if (currentScore != null) {
+            if (currentScore != null) {
               scores.add(currentScore);
             }
             currentBuffer = null;
@@ -192,17 +195,17 @@ public class NVRamPinemhiParser implements NVRamParser {
           currentTitle = null;
           currentScore = null;
           if (scores.size() > 3 && !parseAll) {
-              break;
+            break;
           }
           continue;
-      	}
+        }
 
         if (currentTitle != null && isScoreLine(line)) {
           currentScore = createScore(currentTitle, line);
           if (currentScore != null) {
             if (currentBuffer != null) {
               // this happens rarely, ex rom jd_l7  REGULAR GAME > HIGH SCORES > scores  ou tf_180
-              currentBuffer = null;   
+              currentBuffer = null;
             }
             scores.add(currentScore);
           }
@@ -214,7 +217,7 @@ public class NVRamPinemhiParser implements NVRamParser {
               setScoreOrSuffix(currentScore, currentBuffer);
               currentBuffer = null;
             }
-            if (parseAll || titles.contains(currentTitle)) {
+            if (parseAll || TITLES.contains(currentTitle)) {
               scores.add(currentScore);
             }
           }
@@ -225,7 +228,8 @@ public class NVRamPinemhiParser implements NVRamParser {
           }
           else if (currentBuffer == null) {
             currentBuffer = line;
-          } else {
+          }
+          else {
             currentBuffer += " " + line;
           }
         }
@@ -247,6 +251,7 @@ public class NVRamPinemhiParser implements NVRamParser {
       throw e;
     }
   }
+
   private void setScoreOrSuffix(NVRamScore currentScore, String line) {
     if (!currentScore.hasInitials()) {
       currentScore.setPlayerInitials(line);
@@ -335,7 +340,7 @@ public class NVRamPinemhiParser implements NVRamParser {
       return Long.parseLong(cleanScore);
     }
     catch (NumberFormatException e) {
-      if(log) {
+      if (log) {
         LOG.warn("Failed to parse numeric highscore string '{}', ignoring this segment", score);
       }
 
