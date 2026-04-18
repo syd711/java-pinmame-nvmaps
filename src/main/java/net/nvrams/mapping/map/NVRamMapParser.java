@@ -73,6 +73,10 @@ public class NVRamMapParser implements NVRamParser {
   @Override
   public List<NVRamScore> parseNvRam(String rom, File nvRam, Locale locale, boolean parseAll) throws IOException {
     NVRamMap mapJson = getMap(rom);
+    if (mapJson == null) {
+      return Collections.emptyList();
+    }
+
     byte[] data = Files.readAllBytes(nvRam.toPath());
     SparseMemory memory = getMemory(mapJson, data);
 
@@ -99,6 +103,9 @@ public class NVRamMapParser implements NVRamParser {
   @Override
   public List<NVRamScore> parseRaw(String rom, List<String> lines, Locale locale, boolean parseAll) throws IOException {
     NVRamMap mapJson = getMap(rom);
+    if (mapJson == null) {
+      return Collections.emptyList();
+    }
 
     Iterator<String> linesIterator = lines.iterator();
     List<NVRamScore> scores = new ArrayList<>();
@@ -159,6 +166,10 @@ public class NVRamMapParser implements NVRamParser {
   @Override
   public List<String> getRaw(String rom, File nvRam, Locale locale) throws IOException {
     NVRamMap mapJson = getMap(rom);
+    if (mapJson == null) {
+      return Collections.emptyList();
+    }
+
     byte[] data = Files.readAllBytes(nvRam.toPath());
     SparseMemory memory = getMemory(mapJson, data);
 
