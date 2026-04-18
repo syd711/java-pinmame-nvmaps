@@ -19,25 +19,10 @@ The NVRAM maps are included as a Git submodule under `maps/`. Clone the reposito
 git clone --recurse-submodules https://github.com/syd711/java-pinmame-nvmaps.git
 ```
 
-If you already cloned without `--recurse-submodules`, initialize the submodule manually:
-
-```bash
-git submodule update --init
-```
-
 ## Updating the maps submodule
 
-To pull the latest changes from the upstream [PinMAME NVRAM Maps](https://github.com/tomlogic/pinmame-nvram-maps) project:
-
 ```bash
-git submodule update --remote maps
-```
-
-Then commit the updated submodule reference:
-
-```bash
-git add maps
-git commit -m "Update maps submodule"
+git pull --recurse-submodules    
 ```
 
 ## Building the project
