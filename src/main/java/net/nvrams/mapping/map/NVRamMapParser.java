@@ -48,28 +48,18 @@ public class NVRamMapParser implements NVRamParser {
 
   private final static Logger LOG = LoggerFactory.getLogger(NVRamMapParser.class);
 
-  // the root where map file can be downloaded
-  public String mapRoot = "https://github.com/tomlogic/pinmame-nvram-maps/raw/refs/heads/main/";
-  // An alternative to get files from a local folder. When set, it overrides mapRoot
-  public File mapFolder = null;
+  public File mapFolder = new File("resources/maps");
 
   private Map<String, String> _cacheMapForRom;
   private Map<String, String> cacheRomNames;
 
-  private Map<String, NVRamMap> cacheNVRamMap = new HashMap<>();
-  private Map<String, NVRamPlatform> cachePlatform = new HashMap<>();
+  private final Map<String, NVRamMap> cacheNVRamMap = new HashMap<>();
+  private final Map<String, NVRamPlatform> cachePlatform = new HashMap<>();
 
   /**
    * A service that uses head version of json maps
    */
   public NVRamMapParser() {
-  }
-
-  /**
-   * A service that uses a specific URL to download json maps
-   */
-  public NVRamMapParser(String root) {
-    this.mapRoot = root;
   }
   
   /**
@@ -473,13 +463,8 @@ public class NVRamMapParser implements NVRamParser {
   }
 
   private <T> T getStream(String u, ProcessStream<T> consumer) throws IOException {
-    if (mapFolder != null) {
-      try (FileInputStream in = new FileInputStream(new File(mapFolder, u))) {
-        return consumer.process(in);
-      }
-    }
-    else {
-      return download(mapRoot + u, consumer);
+    try (FileInputStream in = new FileInputStream(new File(mapFolder, u))) {
+      return consumer.process(in);
     }
   }
 
@@ -489,7 +474,7 @@ public class NVRamMapParser implements NVRamParser {
       URL url = new URL(u);
       connection = (HttpURLConnection) url.openConnection();
       int code = connection.getResponseCode();
-      if (code==200) {
+      if (code == 200) {
         InputStream in = url.openStream();
         return consumer.process(in);
       }
@@ -503,7 +488,7 @@ public class NVRamMapParser implements NVRamParser {
   }
 
   @FunctionalInterface
-  public static interface ProcessStream<T> {
-    public T process(InputStream in) throws IOException;
+  public interface ProcessStream<T> {
+    T process(InputStream in) throws IOException;
   }
 }

@@ -1,5 +1,7 @@
 package net.nvrams.mapping;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
@@ -25,35 +27,31 @@ import net.nvrams.mapping.tools.NVRamToolDump;
  */
 public class NVRamMapParserTest {
 
-  /** Root url for test, see above comment  */
-  public static final String MAPS_ROOT = "https://raw.githubusercontent.com/tomlogic/pinmame-nvram-maps/d7b9d881753def5f92e7858bea8bec84a52bc77e/";
-
   public static final String TEST_ROOT = "https://github.com/tomlogic/py-pinmame-nvmaps/raw/refs/heads/main/test/";
 
   /** @fixme commented as a bit long... */
   //@Test
   public void testAllDump() throws IOException {
-    NVRamMapParser parser = new NVRamMapParser(MAPS_ROOT);
-    String indexJsonUrl = MAPS_ROOT + "index.json";
+    NVRamMapParser parser = new NVRamMapParser();
+    File indexJson = new File(parser.mapFolder, "index.json");
 
     // optional ROM, to start with, leave null for all
     String romStart = null; //"t2_l8";
 
-    parser.download(indexJsonUrl, in -> {
+    try (FileInputStream in = new FileInputStream(indexJson)) {
       ObjectMapper mapper = new ObjectMapper();
-      Map<String, Object> values = mapper.readValue(in, new TypeReference<Map<String, Object>>() {});
+      Map<String, Object> values = mapper.readValue(in, new TypeReference<>() {});
       for (String key : values.keySet()) {
         if (romStart == null || key.compareTo(romStart) >= 0) {
           checkRom(parser, key, false);
         }
       }
-      return null;
-    });
+    }
   }
 
   @Test
   public void testOneDump() throws IOException {
-    NVRamMapParser parser = new NVRamMapParser(MAPS_ROOT);
+    NVRamMapParser parser = new NVRamMapParser();
     checkRom(parser, "t2_l8", true);
   }
 
@@ -93,7 +91,7 @@ public class NVRamMapParserTest {
   public void testDumpPlayerCount() throws IOException {
     String rom = "bcats_l5";
 
-    NVRamMapParser parser = new NVRamMapParser(MAPS_ROOT);
+    NVRamMapParser parser = new NVRamMapParser();
     parseNVRam(parser, rom, (mapJson, memory) -> {
         NVRamMapping m = mapJson.getGameState().getPlayerCount();
         String e = m.formatEntry(memory, Locale.ENGLISH);
