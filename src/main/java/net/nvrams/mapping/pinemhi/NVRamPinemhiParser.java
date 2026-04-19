@@ -28,7 +28,7 @@ import net.nvrams.mapping.NVRamScore;
 
 public class NVRamPinemhiParser implements NVRamParser {
   private final static Logger LOG = LoggerFactory.getLogger(NVRamPinemhiParser.class);
-  public static final String RESOURCES_PINEMHI = "resources/pinemhi";
+  public static String pinemhiFolder = "resources/pinemhi";
 
   private File vpPathAdjusted = null;
   private List<String> supportedNvRams = null;
@@ -37,11 +37,15 @@ public class NVRamPinemhiParser implements NVRamParser {
       "RIVER MASTER", "CLUB CHAMPION", "HIGHEST SCORES", "THE BEST DUDE", "ACE WINGER",
       "ROAD-TRIP KING", "BILLIONAIRE CLUB MEMBERS", "MY BEST FRIEND", "MY OTHER FRIENDS");
 
+  public void setPinemhiFolder(File folder) {
+    pinemhiFolder = folder.getAbsolutePath();
+  }
+
   @Override
   public List<String> getSupportedNVRams() throws IOException {
     if (supportedNvRams == null) {
       //force the same folder structure as for the Studio Server
-      File commandFile = new File(RESOURCES_PINEMHI, "PINemHi.exe");
+      File commandFile = new File(pinemhiFolder, "PINemHi.exe");
       List<String> commands = Arrays.asList("cmd.exe", "/c", commandFile.getName(), "-lr");
 
       this.supportedNvRams = new ArrayList<>();
@@ -87,7 +91,7 @@ public class NVRamPinemhiParser implements NVRamParser {
 
   @Nullable
   public List<String> executePINemHi(@NonNull File originalNVRamFile) throws IOException {
-    File commandFile = new File(RESOURCES_PINEMHI, "PINemHi.exe");
+    File commandFile = new File(pinemhiFolder, "PINemHi.exe");
 
     // make sure nvram can be found
     adjustVPPathForEmulator(originalNVRamFile.getParentFile(), true);
