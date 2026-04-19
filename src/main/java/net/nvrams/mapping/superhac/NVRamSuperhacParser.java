@@ -4,11 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,19 +30,31 @@ public class NVRamSuperhacParser implements NVRamParser {
   private Map<String, NVRamMap> _cacheMapForRom;
 
   
-  @Override
-  public List<String> getSupportedNVRams() {
+  //@Override
+  public Set<String> getSupportedRoms() {
     try {
       ensureCacheMapForRom();
-      return new ArrayList<>(_cacheMapForRom.keySet());
+      return _cacheMapForRom.keySet();
     }
     catch (IOException ioe) {
       LOG.error("Cannot get supported NVRams: {}", ioe.getMessage());
-      return Collections.emptyList();
+      return Collections.emptySet();
     }
   }
 
-    @Override
+  @Override
+  public boolean isSupportedRom(String rom) {
+    try {
+      ensureCacheMapForRom();
+      return _cacheMapForRom.containsKey(rom);
+    }
+    catch (IOException ioe) {
+      LOG.error("Cannot get supported NVRams: {}", ioe.getMessage());
+      return false;
+    }
+  }
+
+  @Override
   public List<String> getRaw(String rom, File nvRam, Locale locale) throws IOException {
     ensureCacheMapForRom();
 

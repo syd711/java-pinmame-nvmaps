@@ -1,0 +1,57 @@
+package net.nvrams.mapping.pinemhi.adapters;
+
+import net.nvrams.mapping.RawScoreParser;
+
+import org.springframework.lang.NonNull;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class FourColumnScoreAdapter implements ScoreNvRamAdapter {
+
+  private String name;
+
+  public FourColumnScoreAdapter(String name) {
+    this.name = name;
+  }
+
+  @Override
+  public boolean isApplicable(@NonNull String nvRam, @NonNull List<String> lines) {
+    return nvRam.equals(name);
+  }
+
+  @Override
+  public List<String> convert(@NonNull String nvRam, @NonNull List<String> lines) {
+    List<String> converted = new ArrayList<>();
+    converted.add("HIGHEST SCORES");
+
+    StringBuilder builder = new StringBuilder();
+    for (int i = 1; i < lines.size(); i++) {
+      String line = lines.get(i);
+      String[] s = line.split(" ");
+
+      builder.append("#" + i);
+      builder.append(" ");
+
+      String initials = s[2];
+      if (i >= 10) {
+        initials = s[1];
+      }
+      builder.append(initials);
+      builder.append("   ");
+
+      int subIndex = 3;
+      String score = s[subIndex];
+      while (StringUtils.isEmpty(score) && subIndex < 10) {
+        subIndex++;
+        score = s[subIndex];
+      }
+      score = RawScoreParser.cleanScore(score);
+      builder.append(score);
+      converted.add(builder.toString());
+      builder.setLength(0);
+    }
+    return converted;
+  }
+}

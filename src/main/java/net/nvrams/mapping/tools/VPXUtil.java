@@ -25,10 +25,10 @@ public class VPXUtil {
         vbsFile.delete();
       }
       String vpxFilePath = "\"" + vpxFile.getAbsolutePath() + "\"";
-      List<String> commands = Arrays.asList(VPX_TOOL_EXE, "extractvbs", vpxFilePath);
-      LOG.info("VBS Export CMD: {}", String.join(" ", commands));
+      List<String> cmds = Arrays.asList("cmd.exe", "/c", VPX_TOOL_EXE, "extractvbs", vpxFilePath);
+      LOG.info("VBS Export CMD: {}", String.join(" ", cmds));
 
-      execute(commands, new File("tools"));
+      execute(cmds, new File("tools"));
 
       String script = org.apache.commons.io.FileUtils.readFileToString(vbsFile, Charset.defaultCharset());
       if (!keepVbsFile && !vbsFile.delete()) {

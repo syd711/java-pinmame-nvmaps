@@ -1,0 +1,35 @@
+package net.nvrams.mapping.pinemhi.adapters;
+
+import org.springframework.lang.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+public class NewLineAfterFirstScoreAdapter implements ScoreNvRamAdapter {
+
+  private String name;
+
+  public NewLineAfterFirstScoreAdapter(String name) {
+    this.name = name;
+  }
+
+  @Override
+  public boolean isApplicable(@NonNull String nvRam, @NonNull List<String> lines) {
+    return nvRam.equals(name);
+  }
+
+  @Override
+  public List<String> convert(@NonNull String nvRam, @NonNull List<String> lines) {
+    //pos index contains a ","
+    lines = lines.stream().map(l -> l.replaceAll(",", ")")).collect(Collectors.toList());
+    List<String> updatedLines = new ArrayList<>();
+    for (String line : lines) {
+      if (line.trim().contains("HIGHEST") || line.trim().contains("SCORES")) {
+        continue;
+      }
+      updatedLines.add(line);
+    }
+    return updatedLines;
+  }
+}

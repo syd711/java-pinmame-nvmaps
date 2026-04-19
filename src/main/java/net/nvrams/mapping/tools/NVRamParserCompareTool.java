@@ -8,7 +8,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -24,13 +23,8 @@ public class NVRamParserCompareTool {
     Map<String, String> clones = VPXUtil.getClones(mameFolder);
 
     NVRamMapParser parser = new NVRamMapParser(new File("maps"));
-    List<String> supportedNVRams = parser.getSupportedNVRams();
-
     NVRamPinemhiParser pinemhi = new NVRamPinemhiParser();
-    List<String> supportedByPinemhi = pinemhi.getSupportedNVRams();
-    
     NVRamSuperhacParser superhac = new NVRamSuperhacParser();
-    List<String> supportedbySuperhac = superhac.getSupportedNVRams();
 
     File nvramsFolder = new File("nvrams");
 
@@ -53,34 +47,45 @@ public class NVRamParserCompareTool {
     try (PrintWriter w = new PrintWriter("allroms.csv")) {
       w.println("\"rom\",\"Name\",\"clone of\",\"pinemHi\",\"tomslogic\",\"superhac\",\"nvrams\"");
       for (String s : roms.keySet()) {
-
-        w.print(s + ",");
-        w.print(roms.get(s) + ",");
-
         String cloneOf = clones.get(s);
-        w.print((cloneOf != null? cloneOf: "") + ",");
+        boolean supportByPinemhi = pinemhi.isSupportedRom(s);
+        boolean supportByNVRams = parser.isSupportedRom(s);
+        boolean supportBySuperhac = superhac.isSupportedRom(s);
 
-        w.print((supportedByPinemhi.contains(s) ? "x": "") + ",");
-        w.print((supportedNVRams.contains(s) ? "x": "") + ",");
-        w.print((supportedbySuperhac.contains(s) ? "x": "") + ",");
+        boolean cloneByNVRams = parser.isSupportedRom(cloneOf);
+        boolean cloneBySuperhac = superhac.isSupportedRom(cloneOf);
 
         File nvram = new File(nvramsFolder, s + ".nv");
+        File nvramClone = new File(nvramsFolder, cloneOf + ".nv");
         boolean nvramExists = nvram.exists();
-        if (nvramExists) {
-          w.println("OK");
-        } else {
-          boolean copied = false;
-          for (File folder : testFolders) {
-            File entry = new File(folder, s + ".nv");
-            if (entry.exists()) {
-              Files.copy(entry.toPath(), nvram.toPath());
-              w.println("COPIED");
-              copied = true;
-              break;
+        boolean nvramCloneExists = nvramClone.exists();
+
+        if (!supportByNVRams && !supportBySuperhac && !cloneByNVRams && !cloneBySuperhac && !nvramExists && !nvramCloneExists) {
+          w.print(s + ",");
+          w.print(roms.get(s) + ",");
+
+          w.print((cloneOf != null? cloneOf: "") + ",");
+
+          w.print((supportByPinemhi ? "x": "") + ",");
+          w.print((supportByNVRams ? "x": "") + ",");
+          w.print((supportBySuperhac ? "x": "") + ",");
+
+          if (nvramExists) {
+            w.println("OK");
+          } else {
+            boolean copied = false;
+            for (File folder : testFolders) {
+              File entry = new File(folder, s + ".nv");
+              if (entry.exists()) {
+                Files.copy(entry.toPath(), nvram.toPath());
+                w.println("COPIED");
+                copied = true;
+                break;
+              }
             }
-          }
-          if (!copied) {
-            w.println("KO!!");
+            if (!copied) {
+              w.println("KO!!");
+            }
           }
         }
       }

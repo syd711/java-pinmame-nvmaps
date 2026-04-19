@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.ObjectUtils;
@@ -57,7 +58,7 @@ public class NVRamMapParser implements NVRamParser {
   private final Map<String, NVRamPlatform> cachePlatform = new HashMap<>();
 
   /**
-   * A service that uses head version of json maps
+   * A service that access maps form resources/maps in this project
    */
   public NVRamMapParser() {
   }
@@ -363,14 +364,26 @@ public class NVRamMapParser implements NVRamParser {
   //============================================ Downloaders ======
 
   @Override
-  public List<String> getSupportedNVRams() {
+  public boolean isSupportedRom(String rom) {
     try {
       ensureCacheMapForRom();
-      return new ArrayList<>(_cacheMapForRom.keySet());
+      return _cacheMapForRom.containsKey(rom);
+    }
+    catch (IOException ioe) {
+      LOG.error("Cannot get supported roms: {}", ioe.getMessage());
+      return false;
+    }
+  }
+
+  //@Override
+  public Set<String> getSupportedRoms() {
+    try {
+      ensureCacheMapForRom();
+      return _cacheMapForRom.keySet();
     }
     catch (IOException ioe) {
       LOG.error("Cannot get supported NVRams: {}", ioe.getMessage());
-      return Collections.emptyList();
+      return Collections.emptySet();
     }
   }
 
@@ -426,7 +439,7 @@ public class NVRamMapParser implements NVRamParser {
     }
     String mapPath = mapPathForRom(rom);
     if (mapPath != null) {
-      mapJson= _getMapFromPath(mapPath);
+      mapJson= getMapFromPath(mapPath);
       String romname = romName(rom);
       mapJson.setRom(rom, romname);
       mapJson.setMapPath(mapPath);
@@ -440,7 +453,7 @@ public class NVRamMapParser implements NVRamParser {
     }
   }
 
-  public NVRamMap _getMapFromPath(String mapPath) throws IOException {
+  public NVRamMap getMapFromPath(String mapPath) throws IOException {
     NVRamMap mapJson =  getStream(mapPath, in -> {
       ObjectMapper mapper = new ObjectMapper();
       return mapper.readValue(in, NVRamMap.class);

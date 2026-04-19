@@ -12,6 +12,8 @@ import java.awt.event.KeyEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import net.nvrams.mapping.tools.VPXUtil;
+
 
 /**
  * Service layer for VPX operations.
@@ -46,6 +48,8 @@ public class VpxService {
   public boolean launchGame(VpxFile vpxFile) {
     File vpxExe = new File("C:\\Visual Pinball\\VPinballX64.exe");
     List<String> strings = new ArrayList<>();
+    strings.add("cmd.exe"); 
+    strings.add("/c");
     strings.add(vpxExe.getAbsolutePath());
     strings.add("-Minimized");
     strings.add("-Play");
@@ -90,11 +94,12 @@ public class VpxService {
         return true;
       }
       LOG.info("stopGame: process not terminated.");
+      return false;
     }
     else {
       LOG.info("stopGame: no running game process found.");
+      return true;
     }
-    return false;
   }
 
   /**
@@ -122,7 +127,7 @@ public class VpxService {
 
     // Stub: create an empty placeholder so the UI can reflect success during dev
     try {
-      //VPXUtil.exportVBS(vpxFile.getFile(), true);
+      VPXUtil.exportVBS(vpxFile.getFile(), true);
       return vbsFile.exists();
     } 
     catch (Exception e) {

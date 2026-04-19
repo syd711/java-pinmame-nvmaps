@@ -16,7 +16,7 @@ import net.nvrams.mapping.superhac.NVRamSuperhacParser;
  */
 class NVRamParserCompareTest {
 
-  private boolean useSuperhac = true;
+  private boolean useSuperhac = false;
 
   //@Test
   public void compareNVs() throws Exception {
@@ -24,9 +24,7 @@ class NVRamParserCompareTest {
     Locale loc = Locale.ENGLISH;
 
     NVRamParser pinemhi = new NVRamPinemhiParser();
-    List<String> pinemhiSupported = pinemhi.getSupportedNVRams();
     NVRamParser parser = useSuperhac ? new NVRamSuperhacParser() : new NVRamMapParser();
-    List<String> mapSupported = parser.getSupportedNVRams();
 
     int nbErrors = 0;
     // used in manual testing to skip first roms, should be null normally 
@@ -37,7 +35,7 @@ class NVRamParserCompareTest {
     for (File entry : testFolder.listFiles()) {
       String rom = entry.getName().replace(".nv", "").toLowerCase();
 
-      if ((firstRom==null || firstRom.compareTo(rom) <= 0) && pinemhiSupported.contains(rom) && mapSupported.contains(rom)) {
+      if ((firstRom==null || firstRom.compareTo(rom) <= 0) && pinemhi.isSupportedRom(rom) && parser.isSupportedRom(rom)) {
         System.out.println("Checking " + rom);
 
         List<NVRamScore> scoresPinemhi = pinemhi.parseNvRam(rom, entry, loc, parseAll);
@@ -56,10 +54,10 @@ class NVRamParserCompareTest {
     assertEquals(0, nbErrors);
   }
 
-  //@Test
+  @Test
   public void compareNV() throws Exception {
 
-    String rom = "waterwld";
+    String rom = "aavenger";
     boolean parseAll = false;
 
     /*

@@ -1,0 +1,46 @@
+package net.nvrams.mapping.pinemhi.adapters;
+
+import org.springframework.lang.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class FixTitleScoreAdapter implements ScoreNvRamAdapter {
+
+  private String allow;
+  private String deny;
+  private String name;
+
+  public FixTitleScoreAdapter(String name, String allow, String deny) {
+    this.name = name;
+    this.allow = allow;
+    this.deny = deny;
+  }
+
+  @Override
+  public boolean isApplicable(@NonNull String nvRam, @NonNull List<String> lines) {
+    return nvRam.equals(name);
+  }
+
+  @Override
+  public List<String> convert(@NonNull String nvRam, @NonNull List<String> lines) {
+    List<String> converted = new ArrayList<>();
+    boolean foundTitle = false;
+    for (String line : new ArrayList<>(lines)) {
+      if (line.indexOf(")") == 1 && !foundTitle) {
+        continue;
+      }
+
+      if(line.equals(deny)) {
+        continue;
+      }
+
+      if (!foundTitle && line.equals(allow)) {
+        foundTitle = true;
+      }
+
+      converted.add(line);
+    }
+    return converted;
+  }
+}

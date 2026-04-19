@@ -18,7 +18,7 @@ import net.nvrams.mapping.superhac.NVRamSuperhacParser;
  */
 class NVRamParsersTest {
 
-  private DefaultAdapter adapter = new DefaultAdapter();
+  private RawScoreParser rawParser = RawScoreParserConf.createParser();
 
   private NVRamParser mapParser = new NVRamMapParser(new File("C:\\Github\\pinmame-nvram-maps"));
   private NVRamParser superhacParser = new NVRamSuperhacParser();
@@ -44,8 +44,6 @@ class NVRamParsersTest {
 
     Locale loc = Locale.ENGLISH;
 
-    List<String> mapSupported = parser.getSupportedNVRams();
-
     int nbErrors = 0;
     // used in manual testing to skip first roms, should be null normally 
     String firstRom = null;
@@ -55,17 +53,14 @@ class NVRamParsersTest {
     for (File entry : testFolder.listFiles()) {
       String rom = entry.getName().replace(".nv", "").toLowerCase();
 
-      if ((firstRom==null || firstRom.compareTo(rom) <= 0) && mapSupported.contains(rom)) {
-        System.out.println("Checking " + rom);
+      if ((firstRom==null || firstRom.compareTo(rom) <= 0) && parser.isSupportedRom(rom)) {
 
         List<NVRamScore> scoresMap = parser.parseNvRam(rom, entry, loc, parseAll);
 
         List<String> raw = parser.getRaw(rom, entry, loc);
-        List<NVRamScore> scores = adapter.getScores(rom, raw, parseAll);
+        List<NVRamScore> scores = rawParser.getScores(rom, raw, parseAll);
 
-        if (!checkScores(raw, scoresMap, scores, false)) {
-          System.out.println(" => Error");
-          System.out.println(" ---------------------------");
+        if (!checkScores(rom, raw, scoresMap, scores, false)) {
           nbErrors++;
         }
       }
@@ -78,7 +73,7 @@ class NVRamParsersTest {
 
     NVRamParser parser =  pinemhiParser;
 
-    String rom = "kiko_a10";
+    String rom = "attila";
     boolean parseAll = false;
     /*
     //----------------------------
@@ -120,22 +115,26 @@ class NVRamParsersTest {
 
     Locale loc = Locale.ENGLISH;
 
-    // Get scores from the map and nv directly
+    // Get scores from the map and nv directly (except pinemhi, does not use raw string)
     List<NVRamScore> scoresMap = parser.parseNvRam(rom, entry, loc, parseAll);
 
     // generate the raw version of scores
     List<String> raw = parser.getRaw(rom, entry, loc);
 
-    // parse raw with generic DefaultAdapter
-    List<NVRamScore> scores = adapter.getScores(rom, raw, parseAll);
-    checkScores(raw, scoresMap, scores, true);
+    // parse raw with generic RawScoreParser
+    List<NVRamScore> scores = rawParser.getScores(rom, raw, parseAll);
+    checkScores(rom, raw, scoresMap, scores, true);
 
-    // parse raw with the parser using the map
-    List<NVRamScore> scores2 = parser.parseRaw(rom, raw, loc, parseAll);
-    checkScores(raw, scoresMap, scores2, true);
+    // parse raw with the parser using the map (for pinemhi, this is exactly same as above, so bypass)
+    if (parser != pinemhiParser) {
+      List<NVRamScore> scores2 = parser.parseRaw(rom, raw, loc, parseAll);
+      checkScores(rom, raw, scoresMap, scores2, true);
+    }
   }
 
-  private boolean checkScores(List<String> raw, List<NVRamScore> parsedScores, List<NVRamScore> scores, boolean useAssert) {
+  private boolean checkScores(String rom, List<String> raw, List<NVRamScore> parsedScores, List<NVRamScore> scores, boolean useAssert) {
+    System.out.println("Checking "+ rom);
+
     if (parsedScores.size() == scores.size()) {
       for (int i = 0; i < parsedScores.size(); i++) {
         NVRamScore scorePinemhi = parsedScores.get(i);
@@ -153,6 +152,7 @@ class NVRamParsersTest {
       }
     }
     else {
+      System.out.println("Checking "+ rom);
       System.out.println(String.join("\n", raw));
       if (useAssert) {
         assertEquals(parsedScores.size(), scores.size());

@@ -7,11 +7,11 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import net.nvrams.mapping.DefaultAdapter;
+import net.nvrams.mapping.RawScoreParser;
 
 public class ByteDecoders {
 
-  private final static Logger LOG = LoggerFactory.getLogger(DefaultAdapter.class);
+  private final static Logger LOG = LoggerFactory.getLogger(RawScoreParser.class);
 
   /**
    * Read bytes at given offsets

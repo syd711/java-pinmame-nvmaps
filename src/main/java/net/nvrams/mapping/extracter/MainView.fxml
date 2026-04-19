@@ -16,11 +16,11 @@
             <padding><Insets top="14" right="20" bottom="14" left="20"/></padding>
 
             <Label text="VPX" styleClass="logo-vpx"/>
-            <Label text="ROM Extractor" styleClass="logo-manager"/>
+            <Label text="NVRam Extractor" styleClass="logo-manager"/>
 
             <Region HBox.hgrow="ALWAYS"/>
 
-            <Button fx:id="btnOpenFile"   text="⬆  Open File"   styleClass="btn-primary"
+            <Button fx:id="btnOpenFile"   text="⬆  Open VPX File"   styleClass="btn-primary"
                     onAction="#onOpenFile" mnemonicParsing="false"/>
             <Button fx:id="btnCloseFile"  text="✕  Close File"  styleClass="btn-secondary"
                     onAction="#onCloseFile" mnemonicParsing="false" disable="true"/>
@@ -41,7 +41,7 @@
                         <padding><Insets top="80" bottom="80"/></padding>
                         <Label text="🎮" styleClass="empty-icon"/>
                         <Label text="No file loaded" styleClass="empty-title"/>
-                        <Label text="Click &quot;Open File&quot; to load a VPX table"
+                        <Label text="Click &quot;Open VPX File&quot; to load a VPX table"
                                styleClass="empty-subtitle"/>
                     </VBox>
 

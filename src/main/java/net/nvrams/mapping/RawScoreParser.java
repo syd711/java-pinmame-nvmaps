@@ -16,21 +16,16 @@ import org.springframework.lang.Nullable;
 /**
  * Copied from VpinStudio to test 
  */
-public class DefaultAdapter {
-  private final static Logger LOG = LoggerFactory.getLogger(DefaultAdapter.class);
+public class RawScoreParser {
+  private final static Logger LOG = LoggerFactory.getLogger(RawScoreParser.class);
 
-  private List<String> titles = List.of("MASTER MAGICIAN", "CHAMPION", "GRAND CHAMPION", "WORLD RECORD", "GREATEST VAMPIRE HUNTER", "GREATEST TIME LORD", "RIVER MASTER", "CLUB CHAMPION", "HIGHEST SCORES", "HIGHEST SCORE", "THE BEST DUDE", "ACE WINGER"
-    // to be added in ScoringDB.json....
-    // system-rom-20    che_cho            bop_17                     punchy            punchy             ripleys
-      ,"HIGH SCORE" ,"ROAD-TRIP KING", "BILLIONAIRE CLUB MEMBERS", "MY BEST FRIEND", "MY OTHER FRIENDS", "GRAND CHAMP"
-  );
+  private List<String> titles;
 
-  private List<String> skipTitlesCheckFor = List.of("gnr_300", "jupk_513", "jupk_600", "pool_l7", "trek_201"
-  );
+  private List<String> skipTitlesCheckFor;
 
-
-  public List<NVRamScore> getScores(String raw, boolean parseAll) {
-    return getScores(raw, titles, parseAll);
+  public RawScoreParser(List<String> titles, List<String> romsSkipTitlesCheck) {
+    this.titles = titles;
+    this.skipTitlesCheckFor = romsSkipTitlesCheck;
   }
 
   public List<NVRamScore> getScores(String rom, List<String> lines, boolean parseAll) {
@@ -107,12 +102,12 @@ public class DefaultAdapter {
   private static final Pattern patternScoreTitle = Pattern.compile("^" + _patternScore);
 
 
-  public boolean isTitleScoreLine(String line) {
+  public static boolean isTitleScoreLine(String line) {
     Matcher m = patternScoreTitle.matcher(line);
     return m.find();
   }
 
-  public boolean isScoreLine(String line) {
+  public static boolean isScoreLine(String line) {
     Matcher m = patternScoreLine.matcher(line);
     return m.find();
   }
@@ -126,7 +121,7 @@ public class DefaultAdapter {
     Matcher m = patternScoreTitle.matcher(line);
     if (m.find()) {
       String initials = StringUtils.trim(m.group(1));
-      if (StringUtils.isEmpty(initials)) {
+      if (initials == null) {
         initials = "";
       }
 
@@ -135,6 +130,7 @@ public class DefaultAdapter {
       if (scoreValue != -1) {
         NVRamScore sc = new NVRamScore(initials, scoreValue, -1, title);
         sc.setLabel(title);
+        sc.setRawScore(line);
 
         // do not trim and keep spaces at beginning if present
         String suffix = StringUtils.trim(m.group(3));
@@ -156,9 +152,10 @@ public class DefaultAdapter {
     idx = idx.replace(".:", "");
     int index = Integer.parseInt(idx);
     
-    line = StringUtils.substringAfter(line, " ");
-    NVRamScore sc = createTitledScore(title, line);
+    String line2 = StringUtils.substringAfter(line, " ");
+    NVRamScore sc = createTitledScore(title, line2);
     sc.setPosition(index);
+    sc.setRawScore(line);
     return sc;
   }
 
@@ -174,7 +171,7 @@ public class DefaultAdapter {
       return Long.parseLong(cleanScore);
     }
     catch (NumberFormatException e) {
-      if(log) {
+      if (log) {
         LOG.warn("Failed to parse numeric highscore string '{}', ignoring this segment", score);
       }
 
@@ -182,7 +179,7 @@ public class DefaultAdapter {
     }
   }
 
-  protected String cleanScore(String score) {
+  public static String cleanScore(String score) {
     return score
         .replace(".", "")
         .replace(",", "")

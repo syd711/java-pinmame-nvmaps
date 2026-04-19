@@ -7,7 +7,7 @@ import java.util.Locale;
 
 public interface NVRamParser {
 
-  List<String> getSupportedNVRams() throws IOException;
+  boolean isSupportedRom(String rom);
 
   List<String> getRaw(String rom, File nvRam, Locale locale) throws IOException;
 
