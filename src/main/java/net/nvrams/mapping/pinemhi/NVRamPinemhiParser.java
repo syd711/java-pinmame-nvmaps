@@ -36,9 +36,8 @@ import net.nvrams.mapping.pinemhi.adapters.SkipFirstListScoreAdapter;
 
 public class NVRamPinemhiParser implements NVRamParser {
   private final static Logger LOG = LoggerFactory.getLogger(NVRamPinemhiParser.class);
-
-  public static final String RESOURCES_PINEMHI = "resources/pinemhi";
-
+  
+  public String pinemhiFolder = "resources/pinemhi";
   private File vpPathAdjusted = null;
   private Set<String> supportedNvRams = new HashSet<>();
 
@@ -70,7 +69,7 @@ public class NVRamPinemhiParser implements NVRamParser {
     adapters.add(new AlteringLinesWithoutPosAdapter("wrldtou2.nv", 5));
 
     //force the same folder structure as for the Studio Server
-    File commandFile = new File(RESOURCES_PINEMHI, "PINemHi.exe");
+    File commandFile = new File(pinemhiFolder, "PINemHi.exe");
     List<String> commands = Arrays.asList("cmd.exe", "/c", commandFile.getName(), "-lr");
 
     try {
@@ -135,7 +134,7 @@ public class NVRamPinemhiParser implements NVRamParser {
 
   @Nullable
   public List<String> executePINemHi(@NonNull File originalNVRamFile) throws IOException {
-    File commandFile = new File(RESOURCES_PINEMHI, "PINemHi.exe");
+    File commandFile = new File(pinemhiFolder, "PINemHi.exe");
 
     // make sure nvram can be found
     adjustVPPathForEmulator(originalNVRamFile.getParentFile(), true);
@@ -181,7 +180,7 @@ public class NVRamPinemhiParser implements NVRamParser {
     }
     if (nvRamFolder.exists()) {
       try {
-        File pinemhiIni = new File(RESOURCES_PINEMHI, "pinemhi.ini");
+        File pinemhiIni = new File(pinemhiFolder, "pinemhi.ini");
         INIConfiguration iniConfiguration = loadIni(pinemhiIni);
         String vpPath = (String) iniConfiguration.getSection("paths").getProperty("VP");
         File vp = new File(vpPath);

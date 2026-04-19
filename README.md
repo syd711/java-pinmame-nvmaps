@@ -1,9 +1,17 @@
 # Java samples for PinMAME NVRAM Maps
 
 This project contains some Java code to parse NVRAM (`.nv`)
-files from PinMAME, using JSON-based mapping files from the [PinMAME
-NVRAM Maps](https://github.com/tomlogic/pinmame-nvram-maps) and [Superhac's Score Parser](https://github.com/superhac/pinmame-score-parser) projects.
+files from PinMAME, using 
+- JSON-based mapping files from the [PinMAMENVRAM Maps](https://github.com/tomlogic/pinmame-nvram-maps)
+- and [Superhac's Score Parser](https://github.com/superhac/pinmame-score-parser) .
+- and https://www.pinemhi.com/ from DNA Disturber.
 
+
+### Tomlogic's Pinball Memory Maps
+
+https://github.com/tomlogic/pinmame-nvram-maps
+
+This program makes use of content from the Pinball Memory Maps project.
 
 ## Requirements
 
