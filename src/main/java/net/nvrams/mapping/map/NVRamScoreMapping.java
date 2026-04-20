@@ -6,6 +6,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import net.nvrams.mapping.NVRamScore;
+
 /**
  * Object representing a single entry from a nvram mapping file.
  */
@@ -70,27 +72,27 @@ public class NVRamScoreMapping extends NVRamObject {
   }
 
   public String formatHighScore(SparseMemory memory, Locale locale) {
-    List<String> elements = new ArrayList<>();
-    if (initials != null) {
-      String formatted = initials.formatEntry(memory, locale);
-      formatted = StringUtils.rightPad(formatted, 3);
-      if (formatted != null) elements.add(formatted);
-    }
-    if (score != null) {
-      String formatted = score.formatEntry(memory, locale);
-      if (formatted != null) elements.add(formatted);
-    }
-    if (timestamp != null) {
-      String formatted = timestamp.formatEntry(memory, locale);
-      if (formatted != null) elements.add(formatted);
-    }
-    return elements.isEmpty() ? null : String.join(" ", elements);
+    NVRamScore sc = NvRamScoreDecoders.decodeScore(memory.getRom(), this, null, memory);
+    return sc.toRaw(locale);
   }
 
-  public String formatScoreLine(SparseMemory memory, Locale locale, int position) {
-    String player = formatInitials(memory, locale);
-    String formatted = score.formatEntry(memory, locale);
-    return "#" + position + " " + player + "   " + formatted;
+  public NVRamScore toScore(String title, SparseMemory memory) {
+    String initials = getInitials(memory);
+    Long value = null;
+    String suffix = null;
+    if (score != null) {
+      value = score.getValue(memory);
+      suffix = score.getSuffix();
+    }
+
+    //TODO manage timestamp
+    // if (scoreMapping.getTimestamp() != null) {
+    //   timestamp = scoreMapping.getTimestamp().getTimestampValue(memory);...
+    // }
+
+    NVRamScore sc = new NVRamScore(initials, value, -1, title);
+    sc.setSuffix(suffix);
+    return sc;
   }
   
   public String formatInitials(SparseMemory memory, Locale locale) {
@@ -110,15 +112,18 @@ public class NVRamScoreMapping extends NVRamObject {
     return lbl;
   }
 
+  public String formatValue(SparseMemory memory, Locale locale) {
+    return score != null? score.formatEntry(memory, locale) : null;
+  }
+
+  
   public Long getValue(SparseMemory memory) {
     return score != null? score.getValue(memory) : null;
   }
 
   public String getInitials(SparseMemory memory) {
     return initials != null? initials.getTextValue(memory) : null;
-
   }
-
 
   public void reset(long value) {
     //TODO implement here

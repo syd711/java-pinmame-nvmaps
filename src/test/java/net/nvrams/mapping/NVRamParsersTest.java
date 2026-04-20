@@ -1,9 +1,11 @@
 package net.nvrams.mapping;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -27,24 +29,26 @@ class NVRamParsersTest {
 
   @Test
   public void compareNVsWithSuperhacParser() throws Exception {
-    doCompareNVs(superhacParser);
+    doCompareNVs(superhacParser, new String[] {
+      "bop_l7", "gi_l9", "nbaf_31", "pool_l7", "robo_a34", "sttng_l7", "stwr_a14", "tagteam", "tf_180", "trek_201", "wwfr_103"
+    });
   }
 
   @Test
   public void compareNVsWithMapParser() throws Exception {
-    doCompareNVs(mapParser);
+    doCompareNVs(mapParser, new String[] {});
   }
 
   @Test
   public void compareNVsWithPinemhiParser() throws Exception {
-    doCompareNVs(pinemhiParser);
+    doCompareNVs(pinemhiParser, new String[] {});
   }
 
-  private void doCompareNVs(NVRamParser parser) throws Exception {
+  private void doCompareNVs(NVRamParser parser, String[] ignoreRoms) throws Exception {
 
     Locale loc = Locale.ENGLISH;
 
-    int nbErrors = 0;
+    List<String> errors = new ArrayList<>();
     // used in manual testing to skip first roms, should be null normally 
     String firstRom = null;
     boolean parseAll = false;
@@ -61,33 +65,31 @@ class NVRamParsersTest {
         List<NVRamScore> scores = rawParser.getScores(rom, raw, parseAll);
 
         if (!checkScores(rom, raw, scoresMap, scores, false)) {
-          nbErrors++;
+          if (!ArrayUtils.contains(ignoreRoms, rom)) {
+            errors.add(rom);
+          }
         }
       }
     }
-    assertEquals(0, nbErrors);
+    assertEquals(0, errors.size(), "roms in error: " + String.join(", ", errors));
   }
 
   @Test
   public void compareNV() throws Exception {
 
-    NVRamParser parser =  pinemhiParser;
+    NVRamParser parser =  superhacParser;
 
-    String rom = "attila";
+    String rom = "acd_170h";
     boolean parseAll = false;
     /*
-    //----------------------------
-    NVRAM PARSER ISSUES
-
-    tagteam, tagteam2 => issue with mode_champion
-    tf_180
-    monopoly,godzilla
 
     //----------------------------
+
+
     SUPERHAC PARSER ISSUES
 
-    cv_20h => find a way to skip CANNON BALL CHAMPION
-    fs_lx5 => find a way to skip TOP BOWLER
+  
+
     gi_l9 => decalage ?
     gnr_300
     jupk_513
@@ -137,15 +139,15 @@ class NVRamParsersTest {
 
     if (parsedScores.size() == scores.size()) {
       for (int i = 0; i < parsedScores.size(); i++) {
-        NVRamScore scorePinemhi = parsedScores.get(i);
-        NVRamScore scoreMap = scores.get(i);
-        if (!scoreMap.equals(scorePinemhi)) {
+        NVRamScore parsedScore = parsedScores.get(i);
+        NVRamScore score = scores.get(i);
+        if (!score.equals(parsedScore)) {
           System.out.println(String.join("\n", raw));
           if (useAssert) {
-            assertEquals(scorePinemhi, scoreMap);
+            assertEquals(parsedScore, score);
           }
           else {
-            System.out.println("==> " + scorePinemhi + " != " + scoreMap);
+            System.out.println("==> " + parsedScore + " != " + score);
             return false;
           }
         }

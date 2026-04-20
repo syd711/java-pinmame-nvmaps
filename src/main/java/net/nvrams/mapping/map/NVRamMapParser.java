@@ -17,6 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -84,15 +85,29 @@ public class NVRamMapParser implements NVRamParser {
     List<NVRamScoreMapping> scoreDefs = mapJson.getHighScores();
     List<NVRamScore> scores = new ArrayList<>();
     if (scoreDefs != null) {
+      // count number of scores, group by section title (label)
+      Map<String, Long> countByTitle = scoreDefs.stream()
+        .collect(Collectors.groupingBy(sc -> normalize(sc.formatLabel(false), locale), Collectors.counting()));
+      // true if all scores use a different label
+      boolean allOnes = scoreDefs.size() > 1 && countByTitle.values().stream().allMatch(v -> v == 1);
+
       int position = 1;
-      for (NVRamScoreMapping score : scoreDefs) {
-        String lbl = score.formatLabel(false);
+      String currentLabel = null;
+      for (NVRamScoreMapping scoreDef : scoreDefs) {
+        String lbl = normalize(scoreDef.formatLabel(false), locale);
+        if (!StringUtils.equals(currentLabel, lbl)) {
+          currentLabel = lbl;
+          // When all labels are different, do not reset position
+          if (!allOnes) {
+            position = 1;
+          }
+        }
+        
         if (parseAll || filter(lbl)) {
-          boolean hasPosition = scoreDefs.size() > 1;
-          String initials = score.getInitials(memory);
-          Long value = score.getValue(memory);
-          NVRamScore sc = new NVRamScore(initials, value, hasPosition? position++: -1, lbl);
-          sc.setRawScore(score.formatHighScore(memory, locale));
+          NVRamScore sc = NvRamScoreDecoders.decodeScore(rom, scoreDef, currentLabel, memory);
+          if (allOnes || countByTitle.get(currentLabel) > 1) {
+            sc.setPosition(position++);
+          }
           scores.add(sc);
         }
       }
@@ -120,10 +135,10 @@ public class NVRamMapParser implements NVRamParser {
   private void parseScoresRaw(List<NVRamScore> scores, List<NVRamScoreMapping> scoreDefs,
                               Iterator<String> linesIterator, Locale locale, boolean parseAll) throws IOException {
     if (scoreDefs != null) {
+
       String currentLabel = null;
       for (NVRamScoreMapping score : scoreDefs) {
-        String lbl = score.formatLabel(false);
-        lbl = normalize(lbl, locale);
+        String lbl = normalize(score.formatLabel(false), locale);
         // new section
         if (!StringUtils.equals(currentLabel, lbl)) {
           if (scores.size() > 0) {
@@ -176,40 +191,51 @@ public class NVRamMapParser implements NVRamParser {
 
     List<String> raw = new ArrayList<>();
 
-    getScoresRaw(raw, mapJson.getHighScores(), memory, locale);
-    getScoresRaw(raw, mapJson.getModeChampions(), memory, locale);
+    getScoresRaw(raw, rom, mapJson.getHighScores(), memory, locale);
+    getScoresRaw(raw, rom, mapJson.getModeChampions(), memory, locale);
 
     return raw;
   }
 
-  private void getScoresRaw(List<String> raw, List<NVRamScoreMapping> scoreDefs, SparseMemory memory, Locale locale) {
+  private void getScoresRaw(List<String> raw, String rom, List<NVRamScoreMapping> scoreDefs, SparseMemory memory, Locale locale) {
     if (scoreDefs != null) {
+      // count number of scores, group by section title (label)
+      Map<String, Long> countByTitle = scoreDefs.stream()
+        .collect(Collectors.groupingBy(sc -> normalize(sc.formatLabel(false), locale), Collectors.counting()));
+      // true if all scores use a different label
+      boolean allOnes = scoreDefs.size() > 1 && countByTitle.values().stream().allMatch(v -> v == 1);
+
       int position = 1;
       String currentLabel = null;
-      for (NVRamScoreMapping score : scoreDefs) {
-        String lbl = score.formatLabel(false);
-        lbl = normalize(lbl, locale);
+      for (NVRamScoreMapping scoreDef : scoreDefs) {
+        String lbl = normalize(scoreDef.formatLabel(false), locale);
         if (!StringUtils.equals(currentLabel, lbl)) {
           if (raw.size() > 0) {
             raw.add("");
           }
           raw.add(lbl);
           currentLabel = lbl;
+          // When all labels are different, do not reset position
+          if (!allOnes) {
+            position = 1;
+          }
         }
 
-        boolean hasPosition = scoreDefs.size() > 1;
-        String line = (hasPosition ? position++ + ") ": "") + score.formatHighScore(memory, locale);
-        raw.add(line);
+        NVRamScore sc = NvRamScoreDecoders.decodeScore(rom, scoreDef, currentLabel, memory);
+        if (allOnes || countByTitle.get(currentLabel) > 1) {
+          sc.setPosition(position++);
+        }
+        raw.add(sc.toRaw(locale));
       }
     }
   }
 
   //----------------------------------------------------
 
-  private static final Pattern patternIndex = Pattern.compile("#\\d+");
+  private static final Pattern patternIndex = Pattern.compile("[# ]\\d+");
 
   private String[] ignoredLabels = {
-      "FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", "SEVENTH", "EIGHTH", "NINETH", "TENTH",
+      "FIRST", "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH", "SEVENTH", "EIGHTH", "NINTH", "TENTH",
       "1ST", "2ND", "3RD", "4TH", "5TH", "6TH", "7TH", "8TH", "9TH", "10TH"
   };
 
@@ -338,17 +364,6 @@ public class NVRamMapParser implements NVRamParser {
     NVRamMapping lp = mapJson.getLastPlayed();
     if (lp == null) return null;
     return lp.formatEntry(memory, locale);
-  }
-
-  public List<String> highScores(NVRamMap mapJson, SparseMemory memory, boolean useShortLabels, Locale locale) {
-    List<String> scores = new ArrayList<>();
-    for (NVRamScoreMapping entry : mapJson.getHighScores()) {
-      String score = entry.formatHighScore(memory, locale);
-      if (score != null) {
-        scores.add(entry.formatLabel(useShortLabels) + ": " + score);
-      }
-    }
-    return scores;
   }
 
   public int nvramBaseAddress(NVRamMap mapJson) {

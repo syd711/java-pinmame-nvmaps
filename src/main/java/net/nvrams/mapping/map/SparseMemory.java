@@ -34,6 +34,10 @@ public class SparseMemory {
     this.mapJson = mapJson;
   }
 
+  public String getRom() {
+    return mapJson != null ? mapJson.getRom() : null;
+  }
+
   public boolean isBigEndian() {
     return mapJson.isBigEndian(); 
   }

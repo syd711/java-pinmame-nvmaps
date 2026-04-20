@@ -6,6 +6,7 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 import net.nvrams.mapping.NVRamScore;
+import net.nvrams.mapping.common.TextDecoders;
 
 public class EntryDecoders {
 
@@ -273,5 +274,55 @@ public class EntryDecoders {
       valueText = valueText + " " + entry.getValueSuffix();
     }
     return valueText;
+  }
+
+  //-----------------------------------
+  
+  /**
+   * Decode initials from byte values using the specified decoder.
+   */
+  public static String _decodeInitials(List<Integer> byteVals, String nameDecoder) {
+    if (nameDecoder == null) {
+      return TextDecoders.bytesToText(byteVals);
+    }
+    switch (nameDecoder) {
+      case "ascii_upper":
+        return TextDecoders.bytesToText(byteVals).toUpperCase();
+      case "low_nibble_pairs_ascii":
+        return TextDecoders.lowNibblePairsToText(byteVals);
+      case "high_nibble_pairs_ascii":
+        return TextDecoders.highNibblePairsToText(byteVals);
+      case "atlantis_initials":
+        return TextDecoders.atlantisInitialsToText(byteVals);
+      case "hvymetal_initials":
+        return TextDecoders.hvymetalInitialsToText(byteVals);
+      case "dd_l2_initials":
+        return TextDecoders.ddL2InitialsToText(byteVals);
+      case "grand_l4_initials":
+        return TextDecoders.grandL4InitialsToText(byteVals);
+      case "austin_name":
+        return TextDecoders.austinNameToText(byteVals);
+      case "monopoly_name":
+        return TextDecoders._monopolyNameToText(byteVals);
+      case "ff_blank_ascii":
+        return TextDecoders.ffBlankInitialsToText(byteVals);
+      default:
+        return TextDecoders.bytesToText(byteVals);
+    }
+  }
+
+  /**
+   * Decode initials from byte values using the specified decoder.
+   */
+  public static String decodeSuffix(List<Integer> byteVals, String nameDecoder) {
+    if (nameDecoder == null) {
+      return null;
+    }
+    switch (nameDecoder) {
+      case "monopoly_name":
+        return TextDecoders.monopolySuffix(byteVals);
+      default:
+        return null;
+    }
   }
 }

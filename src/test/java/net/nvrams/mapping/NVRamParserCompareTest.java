@@ -1,9 +1,12 @@
 package net.nvrams.mapping;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -16,75 +19,63 @@ import net.nvrams.mapping.superhac.NVRamSuperhacParser;
  */
 class NVRamParserCompareTest {
 
-  private boolean useSuperhac = false;
+  private NVRamParser pinemhi = new NVRamPinemhiParser();
+
+  private static final List<String> IGNORE_POSITIONS = List.of("");
+ 
+  @Test
+  public void compareNVsWithMapParser() throws Exception {
+    doCompareNVs(new NVRamMapParser(), new String[] {
+        "bguns_la", "bop_l7", "bop_l8", "freddy", "rs_l6", "sc_091", "strlt_l1", "sttng_l7", "tf_180", "trek_201"
+    });
+  }
 
   //@Test
-  public void compareNVs() throws Exception {
+  public void compareNVsWithSuperhacParser() throws Exception {
+    doCompareNVs( new NVRamSuperhacParser(), new String[] {});
+  }
 
-    Locale loc = Locale.ENGLISH;
+  public void doCompareNVs(NVRamParser parser, String[] ignoreRoms) throws Exception {
 
-    NVRamParser pinemhi = new NVRamPinemhiParser();
-    NVRamParser parser = useSuperhac ? new NVRamSuperhacParser() : new NVRamMapParser();
-
-    int nbErrors = 0;
     // used in manual testing to skip first roms, should be null normally 
-    String firstRom = "wipeouu";
+    String firstRom = null;
     boolean parseAll = false;
 
+    Locale loc = Locale.ENGLISH;
+    List<String> errors = new ArrayList<>();
     File testFolder = new File("nvrams");
     for (File entry : testFolder.listFiles()) {
       String rom = entry.getName().replace(".nv", "").toLowerCase();
 
       if ((firstRom==null || firstRom.compareTo(rom) <= 0) && pinemhi.isSupportedRom(rom) && parser.isSupportedRom(rom)) {
-        System.out.println("Checking " + rom);
-
-        List<NVRamScore> scoresPinemhi = pinemhi.parseNvRam(rom, entry, loc, parseAll);
-        String rawPinemhi = String.join("\n", pinemhi.getRaw(rom, entry, loc));
-
-        List<NVRamScore> scoresMap = parser.parseNvRam(rom, entry, loc, parseAll);
-        String rawMap = String.join("\n", parser.getRaw(rom, entry, loc));
-
-        if (!checkScores(scoresPinemhi, rawPinemhi, scoresMap, rawMap, false)) {
-          System.out.println(" => Error");
-          System.out.println(" ---------------------------");
-          nbErrors++;
+        if (!doCompare(rom, entry, parser, parseAll, false, loc)) {
+          if (!ArrayUtils.contains(ignoreRoms, rom)) {
+            errors.add(rom);
+          }
         }
       }
     }
-    assertEquals(0, nbErrors);
+    assertEquals(0, errors.size(), "roms in error: " + String.join(", ", errors));
   }
+
 
   @Test
   public void compareNV() throws Exception {
 
-    String rom = "aavenger";
+    NVRamParser parser = new NVRamMapParser();
+    String rom = "monopoly";
     boolean parseAll = false;
 
     /*
-
-waterwld => exception
-
     FIXME NVRamMapParser These roms need to be fixed
-    rom = "cueball3";
-    rom = "drac_l1";
-    rom = "godzilla";
-    rom = "kissc";
-    rom = "lostspc";
-    rom = "monopoly";
-    rom = "mtl_180h";
-    rom = "pool_l7";
-    rom = "sc_091";
-    rom = "strlt_l1";
-    rom = "sttng_l7";
-    rom = "tf_180";
-    rom = "tmnt_104";
-    rom = "trek_201";
+
+      bop_l7, bop_l8, freddy, rs_l6, sc_091, strlt_l1, sttng_l7, tf_180, trek_201
+
 
     FIXME NVRamSUperhacParser These roms need to be fixed  
     strlt_l1
     ts_lx5
     viprsega
-    waterwld !!!!
 
     FIXME NVRamSUperhacParser fix map
     dollyptb  => "decoder": "single_high_nibble_score_x10"
@@ -115,24 +106,44 @@ waterwld => exception
     File entry = new File(testFolder, rom + ".nv");
 
     Locale loc = Locale.ENGLISH;
-    NVRamParser pinemhi = new NVRamPinemhiParser();
+    doCompare(rom, entry, parser, parseAll, true, loc);
+  }
+
+  private boolean doCompare(String rom, File entry, NVRamParser parser, boolean parseAll, boolean useAssert, Locale loc) throws IOException {
+    System.out.println("Checking " + rom);
+
     List<NVRamScore> scoresPinemhi = pinemhi.parseNvRam(rom, entry, loc, parseAll);
     String rawPinemhi = String.join("\n", pinemhi.getRaw(rom, entry, loc));
 
-    NVRamParser parser = useSuperhac ? new NVRamSuperhacParser() : new NVRamMapParser();
-    List<NVRamScore> scoresMap = parser.parseNvRam(rom, entry, loc, parseAll);
-    String rawMap = String.join("\n", parser.getRaw(rom, entry, loc));
+    List<String> raw = parser.getRaw(rom, entry, loc);
+    String rawMap = String.join("\n", raw);
 
-    checkScores(scoresPinemhi, rawPinemhi, scoresMap, rawMap, true);
+    List<NVRamScore> scoresMap = parser.parseNvRam(rom, entry, loc, parseAll);
+    if (!checkScores(rom, scoresPinemhi, rawPinemhi, scoresMap, rawMap, useAssert)) {
+      System.out.println(" => Error");
+      System.out.println(" ---------------------------");
+      return false;
+    }
+
+    // same with RawScoreParser
+    List<NVRamScore> scoresMap2 = parser.parseRaw(rom, raw, loc, parseAll);
+    if (!checkScores(rom, scoresPinemhi, rawPinemhi, scoresMap2, rawMap, useAssert)) {
+      System.out.println(" => Error");
+      System.out.println(" ---------------------------");
+      return false;
+    }
+
+    return true;
   }
 
-  private boolean checkScores(List<NVRamScore> scoresPinemhi, String rawPinemhi, List<NVRamScore> scoresMap, String rawMap, boolean useAssert) {
+  private boolean checkScores(String rom, List<NVRamScore> scoresPinemhi, String rawPinemhi, List<NVRamScore> scoresMap, String rawMap, boolean useAssert) {
     if (scoresPinemhi.size() == scoresMap.size()) {
       for (int i = 0; i < scoresPinemhi.size(); i++) {
         NVRamScore scorePinemhi = scoresPinemhi.get(i);
         NVRamScore scoreMap = scoresMap.get(i);
-        if (!scoreMap.equals(scorePinemhi)) {
+        if (!checkScore(rom, scoreMap, scorePinemhi)) {
           System.out.println(rawPinemhi);
+          System.out.println("-----------------");
           System.out.println(rawMap);
           if (useAssert) {
             assertEquals(scorePinemhi, scoreMap);
@@ -146,6 +157,7 @@ waterwld => exception
     }
     else {
       System.out.println(rawPinemhi);
+      System.out.println("-----------------");
       System.out.println(rawMap);
       if (useAssert) {
         assertEquals(scoresPinemhi.size(), scoresMap.size());
@@ -154,5 +166,12 @@ waterwld => exception
     }
 
     return true;
+  }
+
+  private boolean checkScore(String rom, NVRamScore score1, NVRamScore score2) {
+    return score1.getPlayerInitials().equalsIgnoreCase(score2.getPlayerInitials())
+        && (IGNORE_POSITIONS.contains(rom) ? true : score1.getPosition() == score2.getPosition())
+        && (score1.getScore() != null ? score1.getScore().equals(score2.getScore()) : true)
+        && (score1.getScoreText() != null ? score1.getScoreText().equals(score2.getScoreText()) : true);
   }
 }

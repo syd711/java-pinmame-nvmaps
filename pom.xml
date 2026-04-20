@@ -142,9 +142,9 @@
                         </goals>
                         <configuration>
                             <url>https://github.com/superhac/pinmame-score-parser/releases/download/${superhac.parser.version}/roms.json</url>
-                            <outputDirectory>${project.basedir}/src/main/resources/net/nvrams/mapping/superhac</outputDirectory>
+                            <outputDirectory>${project.basedir}/resources/superhac</outputDirectory>
                             <outputFileName>roms.json</outputFileName>
-                            <overwrite>true</overwrite>
+                            <overwrite>false</overwrite>
                         </configuration>
                     </execution>
                 </executions>

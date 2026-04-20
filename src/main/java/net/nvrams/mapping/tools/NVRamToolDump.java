@@ -77,14 +77,15 @@ public class NVRamToolDump {
     for (NVRamScoreMapping score : scores) {
       String lbl = score.formatLabel(false);
       if (displayLabel && lbl != null && !StringUtils.equals(currentLabel, lbl)) {
-        if (pos > 1) {
+        if (pos++ > 1) {
           bld.append(System.lineSeparator());  
         }
         bld.append(lbl).append(System.lineSeparator());
         currentLabel = lbl;
       }
-      String value = score.formatScoreLine(memory, locale, pos++);
-      bld.append(value).append(System.lineSeparator());
+
+      bld.append(score.formatHighScore(memory, locale));
+      bld.append(System.lineSeparator());
     }
 
     //mapJson.getModeChampions()
@@ -151,9 +152,8 @@ public class NVRamToolDump {
       printGroupName(bld, group);
 
       for (NVRamScoreMapping score : scores) {
-        String lbl = score.formatLabel(false);
         String value = score.formatHighScore(memory, locale);
-        printLine(bld, lbl + ": " + value);
+        printLine(bld, value);
       }
     }
   }

@@ -1,6 +1,7 @@
 package net.nvrams.mapping.superhac;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -27,14 +28,16 @@ import net.nvrams.mapping.NVRamScore;
 public class NVRamSuperhacParser implements NVRamParser {
   private final static Logger LOG = LoggerFactory.getLogger(NVRamSuperhacParser.class);
 
-  private Map<String, NVRamMap> _cacheMapForRom;
+  public String superhacFolder = "resources/superhac";
+
+  private Map<String, NVRamMap> cacheMapForRom;
 
   
   //@Override
   public Set<String> getSupportedRoms() {
     try {
       ensureCacheMapForRom();
-      return _cacheMapForRom.keySet();
+      return cacheMapForRom.keySet();
     }
     catch (IOException ioe) {
       LOG.error("Cannot get supported NVRams: {}", ioe.getMessage());
@@ -46,7 +49,7 @@ public class NVRamSuperhacParser implements NVRamParser {
   public boolean isSupportedRom(String rom) {
     try {
       ensureCacheMapForRom();
-      return _cacheMapForRom.containsKey(rom);
+      return cacheMapForRom.containsKey(rom);
     }
     catch (IOException ioe) {
       LOG.error("Cannot get supported NVRams: {}", ioe.getMessage());
@@ -58,7 +61,7 @@ public class NVRamSuperhacParser implements NVRamParser {
   public List<String> getRaw(String rom, File nvRam, Locale locale) throws IOException {
     ensureCacheMapForRom();
 
-    NVRamMap map = _cacheMapForRom.get(rom);
+    NVRamMap map = cacheMapForRom.get(rom);
     if (map != null) {
       byte[] data = Files.readAllBytes(nvRam.toPath());
       return map.getRaw(data, locale);
@@ -70,7 +73,7 @@ public class NVRamSuperhacParser implements NVRamParser {
   public List<NVRamScore> parseNvRam(String rom, File nvRam, Locale locale, boolean parseAll) throws IOException {
     ensureCacheMapForRom();
 
-    NVRamMap map = _cacheMapForRom.get(rom);
+    NVRamMap map = cacheMapForRom.get(rom);
     if (map != null) {
       byte[] data = Files.readAllBytes(nvRam.toPath());
       return map.parseScores(data, locale, parseAll);
@@ -82,7 +85,7 @@ public class NVRamSuperhacParser implements NVRamParser {
   public List<NVRamScore> parseRaw(String rom, List<String> lines, Locale locale, boolean parseAll) throws IOException {
     ensureCacheMapForRom();
 
-    NVRamMap map = _cacheMapForRom.get(rom);
+    NVRamMap map = cacheMapForRom.get(rom);
     if (map != null) {
       return map.parseRaw(lines, locale, parseAll);
     }
@@ -93,16 +96,18 @@ public class NVRamSuperhacParser implements NVRamParser {
   //------------------------------
 
   private void ensureCacheMapForRom() throws IOException {
-    if (_cacheMapForRom == null) {
+    if (cacheMapForRom == null) {
       LOG.info("Load cache of rom map from classpath resources");
-      try (InputStream in = getClass().getResourceAsStream("/net/nvrams/mapping/superhac/roms.json")) {
-        if (in == null) {
+      File roms  = new File(superhacFolder, "roms.json");
+      if (!roms.exists()) {
           throw new IOException("roms.json not found in classpath");
-        }
-        ObjectMapper mapper = new ObjectMapper();
-        _cacheMapForRom = mapper.readValue(in, new TypeReference<Map<String, NVRamMap>>() {});
       }
-      LOG.info("Rom Cache loaded with {} roms", _cacheMapForRom.size());
+
+      try (InputStream in = new FileInputStream(roms)) {
+        ObjectMapper mapper = new ObjectMapper();
+        cacheMapForRom = mapper.readValue(in, new TypeReference<Map<String, NVRamMap>>() {});
+      }
+      LOG.info("Rom Cache loaded with {} roms", cacheMapForRom.size());
     }
   }
 }

@@ -284,6 +284,18 @@ public class NVRamMapping extends NVRamObject {
     return ba;
   }
 
+  public List<Integer> getIntegers(SparseMemory memory) {
+    byte[] ba = getBytes(memory);
+    if (ba != null) {
+      List<Integer> bytesAsInt = new ArrayList<>();
+      for (int i = 0 ; i < ba.length; i++) {
+        bytesAsInt.add(ba[i] & 0xFF);
+      }
+      return bytesAsInt;
+    }
+    return null;
+  }
+
   private byte[] combineNibbles(byte[] ba, Nibble nibble) {
     List<Byte> newBa = new ArrayList<>();
     int value = 0;
@@ -495,7 +507,7 @@ public class NVRamMapping extends NVRamObject {
     //}
   }
 
-  public String formatValue(Long value, Locale locale) {
+  private String formatValue(Long value, Locale locale) {
     if (value == null) return null;
 
     long lv = value.longValue();

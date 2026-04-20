@@ -20,7 +20,7 @@ public class NVRamMap implements NVRamScoreDefinition {
   private String decoder;
 
   @JsonProperty("one_based")
-  private boolean oneBased = false;
+  private boolean oneBased = true;
 
   @JsonProperty("reverse_digits")
   private boolean reverseDigits = false;
@@ -53,9 +53,9 @@ public class NVRamMap implements NVRamScoreDefinition {
 
   public List<NVRamScore> parseScores(byte[] data, Locale locale, boolean parseAll) throws IOException {
     List<NVRamScore> scores = new ArrayList<>();
-    iterate((scoreEntry, title) -> {
+    iterate((scoreEntry, title, sectionEnabled) -> {
         NVRamScore sc = scoreEntry.getScore(data, title, locale, oneBased, zeroByte, zeroIfGte);
-        if (sc != null && (parseAll || sc.getScore() != null)) {
+        if (sc != null && (parseAll || sc.getScore() != null) && sectionEnabled) {
           scores.add(sc);
           return 1;
         }
@@ -68,9 +68,9 @@ public class NVRamMap implements NVRamScoreDefinition {
     Iterator<String> linesIterator = lines.iterator();
     List<NVRamScore> scores = new ArrayList<>();
     String[] currentTitle = { null };
-    iterate((scoreEntry, title) -> {
+    iterate((scoreEntry, title, sectionEnabled) -> {
         if (!StringUtils.equals(currentTitle[0], title)) {
-          if (scores.size() > 0) {
+          if (currentTitle[0] != null) {
             // read blank line
             readLine(linesIterator, "");
           }
@@ -81,7 +81,7 @@ public class NVRamMap implements NVRamScoreDefinition {
         }
         // read the score
         NVRamScore sc = scoreEntry.getScore(linesIterator, title, locale);
-        if (sc != null && (parseAll || sc.getScore() != null)) {
+        if (sc != null && (parseAll || sc.getScore() != null) && sectionEnabled) {
           scores.add(sc);
           return 1;
         }
@@ -95,9 +95,9 @@ public class NVRamMap implements NVRamScoreDefinition {
   public List<String> getRaw(byte[] data, Locale locale) throws IOException {
     List<String> raw = new ArrayList<>();
     String[] currentTitle = { null };
-    iterate((scoreEntry, title) -> {
+    iterate((scoreEntry, title, sectionEnabled) -> {
         if (!StringUtils.equals(currentTitle[0], title)) {
-          if (raw.size() > 0) {
+          if (currentTitle[0] != null) {
             raw.add("");
           }
           if (StringUtils.isNotEmpty(title)) {
@@ -106,8 +106,8 @@ public class NVRamMap implements NVRamScoreDefinition {
           currentTitle[0] = title;
         }
 
-        NVRamScore sc = scoreEntry.getScore(data, title, locale, true, zeroByte, zeroIfGte);
-        if (sc != null) {
+        NVRamScore sc = scoreEntry.getScore(data, title, locale, oneBased, zeroByte, zeroIfGte);
+        if (sc != null && sectionEnabled) {
           raw.add(sc.toRaw(locale));
           return 1;
         }
@@ -126,39 +126,41 @@ public class NVRamMap implements NVRamScoreDefinition {
       _settings.putAll(settings);
     }
     _settings.put("buyins", parseAll);
+    _settings.put("additional", parseAll);
 
     int nbScores = 0;
     switch (decoder) {
       case "leaderboard_bcd":
         for (NVRamEntry entry : entries) {
-          nbScores += scores.process(entry, "HIGHEST SCORES");
+          nbScores += scores.process(entry, "HIGHEST SCORES", true);
         }
         break;
       case "mixed_leaderboard":
         // FIXME should not be needed but today some sections are redundant
         mergeSections(sections);
         for (NVRamSection section : sections) {
-          // stop when a first section is filtered
-          if (!section.isEnabled(_settings)) {
+          boolean sectionEnabled = section.isEnabled(_settings);
+          // stop when a first section is filtered, except if it is at beginning
+          if (!sectionEnabled && nbScores > 0) {
             break;
           }
           if (nbScores > 3 && !parseAll) {
             break;
           }
           for (NVRamEntry entry : section.getEntries()) {
-            nbScores += scores.process(entry, section.getTitle());
+            nbScores += scores.process(entry, section.getTitle(), sectionEnabled);
           }
         }
         break;
       default:
         // other decoders are single score cases
-        nbScores += scores.process(this, "HIGHEST SCORE");
+        nbScores += scores.process(this, "HIGHEST SCORE", true);
     }
   }
 
   @FunctionalInterface
   public static interface NVRamScoreDefinitionProcessor {
-    public int process(NVRamScoreDefinition scoreDefinition, String title) throws IOException;
+    public int process(NVRamScoreDefinition scoreDefinition, String title, boolean sectionEnabled) throws IOException;
   }
 
   /**

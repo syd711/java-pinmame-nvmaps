@@ -10,6 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import net.nvrams.mapping.NVRamScore;
+import net.nvrams.mapping.common.TextDecoders;
 
 public class NVRamEntry implements NVRamScoreDefinition {
 
@@ -107,9 +108,13 @@ public class NVRamEntry implements NVRamScoreDefinition {
   public NVRamScore getScore(byte[] data, String globalTitle, Locale locale, boolean oneBased, Integer zeroByte, Integer zeroIfGte) {
 
     String initials = "";
+    String suffix = null;
     if (nameOffsets != null) {
       List<Integer> byteVals = ByteDecoders.readOffsets(data, nameOffsets, oneBased, false);
-      initials = ByteDecoders.decodeInitials(byteVals, nameDecoder);
+      initials = EntryDecoders._decodeInitials(byteVals, nameDecoder);
+      initials = TextDecoders.cleanText(initials);
+
+      suffix = EntryDecoders.decodeSuffix(byteVals, nameDecoder);
     }
 
     int position = rank != null ? rank.intValue() : -1;
@@ -122,7 +127,7 @@ public class NVRamEntry implements NVRamScoreDefinition {
 
     if (entryDecoder != null) {
       NVRamScore sc = EntryDecoders.dispatchEntryDecoder(data, this, initials, position, ttle, oneBased, zeroByte, zeroIfGte);
-      return !ByteDecoders.cleanText(initials).isEmpty() || StringUtils.isNotEmpty(sc.getScoreText()) ? sc : null;
+      return !TextDecoders.cleanText(initials).isEmpty() || StringUtils.isNotEmpty(sc.getScoreText()) ? sc : null;
     }
 
     // Standard score entry
@@ -135,7 +140,8 @@ public class NVRamEntry implements NVRamScoreDefinition {
     }
 
     NVRamScore sc = new NVRamScore(initials, decodedScore, position, ttle);
-    sc.setSuffix(getValueSuffix());
+    suffix = StringUtils.defaultString(suffix, getValueSuffix());
+    sc.setSuffix(suffix);
     //parsed.valuePrefix = (String) entry.get("value_prefix");
     //parsed.valueSuffix = (String) entry.get("value_suffix");
     //parsed.valueFormat = (String) entry.get("value_format");

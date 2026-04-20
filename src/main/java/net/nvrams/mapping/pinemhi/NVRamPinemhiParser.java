@@ -30,7 +30,6 @@ import net.nvrams.mapping.pinemhi.adapters.AlteringLinesWithoutPosAdapter;
 import net.nvrams.mapping.pinemhi.adapters.Anonymous5PlayerScoreAdapter;
 import net.nvrams.mapping.pinemhi.adapters.FixTitleScoreAdapter;
 import net.nvrams.mapping.pinemhi.adapters.FourColumnScoreAdapter;
-import net.nvrams.mapping.pinemhi.adapters.MultiBlockAdapter;
 import net.nvrams.mapping.pinemhi.adapters.ScoreNvRamAdapter;
 import net.nvrams.mapping.pinemhi.adapters.SkipFirstListScoreAdapter;
 
@@ -41,7 +40,7 @@ public class NVRamPinemhiParser implements NVRamParser {
   private File vpPathAdjusted = null;
   private Set<String> supportedNvRams = new HashSet<>();
 
-  private final RawScoreParser defaultAdapter;
+  private final RawScoreParser rawScoreParser;
 
   private final List<ScoreNvRamAdapter> adapters = new ArrayList<>();
 
@@ -53,8 +52,8 @@ public class NVRamPinemhiParser implements NVRamParser {
     this(new RawScoreParser(titles, romsSkipTitlesCheck));
   }
 
-  private NVRamPinemhiParser(RawScoreParser rawParser) {
-    this.defaultAdapter = rawParser;
+  private NVRamPinemhiParser(RawScoreParser rawScoreParser) {
+    this.rawScoreParser = rawScoreParser;
 
     //adapters.add(new SinglePlayerScoreAdapter("algar_l1.nv", 1));
     //adapters.add(new SinglePlayerScoreAdapter("alienstr.nv", 1));
@@ -65,7 +64,7 @@ public class NVRamPinemhiParser implements NVRamParser {
     adapters.add(new Anonymous5PlayerScoreAdapter("punchy.nv"));
     adapters.add(new FixTitleScoreAdapter("rs_l6.nv", "TODAY'S HIGHEST SCORES", "ALL TIME HIGHEST SCORES"));
     //adapters.add(new SinglePlayerScoreAdapter());
-    adapters.add(new MultiBlockAdapter("pool_l7.nv", 8));
+    //adapters.add(new MultiBlockAdapter("pool_l7.nv", 8));
     adapters.add(new AlteringLinesWithoutPosAdapter("wrldtou2.nv", 5));
 
     //force the same folder structure as for the Studio Server
@@ -95,7 +94,7 @@ public class NVRamPinemhiParser implements NVRamParser {
   @Override
   public List<NVRamScore> parseNvRam(String rom, @NonNull File nvRam, Locale locale, boolean parseAll) throws IOException {
     List<String> lines = getLines(nvRam);
-    return defaultAdapter.getScores(rom, lines, parseAll);
+    return rawScoreParser.getScores(rom, lines, parseAll);
   }
 
   @Override
@@ -105,7 +104,7 @@ public class NVRamPinemhiParser implements NVRamParser {
 
   @Override
   public List<NVRamScore> parseRaw(String rom, List<String> lines, Locale locale, boolean parseAll) throws IOException {
-    return defaultAdapter.getScores(rom, lines, parseAll);
+    return rawScoreParser.getScores(rom, lines, parseAll);
   }
 
 

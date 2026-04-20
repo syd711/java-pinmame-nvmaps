@@ -2062,6 +2062,7 @@
     "scoretype": "Leaderboard",
     "sections": [
       {
+        "enabled_setting": "additional",
         "entries": [
           {"name_offsets": [5967, 5968, 5969], "rank": null, "score_decoder": "byte_pair_100_1", "score_offsets": [5970, 5971]}
         ],
@@ -2580,6 +2581,7 @@
     "settings": {"buyins": true},
     "sections": [
       {
+        "enabled_setting": "additional",
         "entries": [
           {"name_offsets": [7748, 7749, 7750], "rank": null, "score_decoder": "bcd", "score_offsets": [7751, 7752]}
         ],
@@ -6974,12 +6976,14 @@
         ]
       },
       {
+        "enabled_setting": "additional",
         "title": "COMBO CHAMPION",
         "entries": [
           {"name_offsets": [12041, 12042, 12043, 12044, 12045, 12046, 12047, 12048, 12049, 12050], "rank": null, "score_decoder": "raw_byte", "score_offsets": [12065], "value_suffix": "COMBOS"}
         ]
       },
       {
+        "enabled_setting": "additional",
         "title": "BEST COMBO CHAMPION",
         "entries": [
           {"name_offsets": [12073, 12074, 12075, 12076, 12077, 12078, 12079, 12080, 12081, 12082], "rank": null, "score_decoder": "raw_byte", "score_offsets": [12099], "value_suffix": "-WAY"}

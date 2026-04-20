@@ -49,11 +49,13 @@ public class RawScoreParser {
         	currentTitle = null;
           currentSuffix = null;
           currentScore = null;
-        	if (skipTitlesCheckFor.contains(rom) || scores.size() <= 3 || parseAll) {
+        	if (parseAll || skipTitlesCheckFor.contains(rom) || scores.size() < 3) {
             continue;
           }
-          // else stop the parsing
-          break;
+          else {
+            // stop the parsing
+            break;
+          }
       	}
 
         if (currentTitle != null && isScoreLine(line)) {
@@ -63,9 +65,9 @@ public class RawScoreParser {
           }
         }
         else if (currentTitle != null && isTitleScoreLine(line)) {
-            currentScore = createTitledScore(currentTitle, line);
-            if (currentScore != null) {
-            if (parseAll || titles.contains(currentTitle)) {
+          currentScore = createTitledScore(currentTitle, line);
+          if (currentScore != null) {
+            if (parseAll || skipTitlesCheckFor.contains(rom) || titles.contains(currentTitle)) {
               scores.add(currentScore);
             }
           }
@@ -73,6 +75,8 @@ public class RawScoreParser {
         else if (currentTitle != null && StringUtils.isNotEmpty(line)) {
           if (currentScore != null) {
             currentSuffix = " " + line;
+          } else {
+            currentTitle += " " + line;
           }
         }
         else if (StringUtils.isNotEmpty(line)) {
@@ -81,6 +85,19 @@ public class RawScoreParser {
       }
       if (currentSuffix != null && currentScore != null) {
         currentScore.setSuffix(currentSuffix);
+      }
+
+      // E.g. Transformers has a separate highscore list for Autobots and Decepticons, combines all scores into one list
+      if (StringUtils.equals(rom, "tf_180")) {
+        // keep only first 10 items
+        if (scores.size() > 10) {
+          scores = scores.subList(0, 10);
+        }
+        scores.sort((a, b) -> Long.compare(b.getScore(), a.getScore()));
+        int i = 1;
+        for (NVRamScore score : scores) {
+          //score.setPosition(i++);
+        }
       }
 
       //OLE removed
