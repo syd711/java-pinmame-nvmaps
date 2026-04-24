@@ -19,7 +19,7 @@ import net.nvrams.mapping.superhac.NVRamSuperhacParser;
  */
 class NVRamParserCompareTest {
 
-  private NVRamParser pinemhi = new NVRamPinemhiParser();
+  private NVRamParser pinemhi = new NVRamPinemhiParser(new File("resources/pinemhi/"));
 
   @Test
   public void compareNVsWithMapParser() throws Exception {

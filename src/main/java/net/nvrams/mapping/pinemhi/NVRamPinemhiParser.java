@@ -36,7 +36,7 @@ import net.nvrams.mapping.pinemhi.adapters.SkipFirstListScoreAdapter;
 public class NVRamPinemhiParser implements NVRamParser {
   private final static Logger LOG = LoggerFactory.getLogger(NVRamPinemhiParser.class);
   
-  public String pinemhiFolder = "resources/pinemhi";
+  private File pinemhiFolder;
   private File vpPathAdjusted = null;
   private Set<String> supportedNvRams = new HashSet<>();
 
@@ -44,16 +44,17 @@ public class NVRamPinemhiParser implements NVRamParser {
 
   private final List<ScoreNvRamAdapter> adapters = new ArrayList<>();
 
-  public NVRamPinemhiParser() {
-    this(RawScoreParserConf.createParser());
+  public NVRamPinemhiParser(File pinhemiFolder) {
+    this(pinhemiFolder, RawScoreParserConf.createParser());
   }
 
-  public NVRamPinemhiParser(List<String> titles, List<String> romsSkipTitlesCheck) {
-    this(new RawScoreParser(titles, romsSkipTitlesCheck));
+  public NVRamPinemhiParser(File pinhemiFolder, List<String> titles, List<String> romsSkipTitlesCheck) {
+    this(pinhemiFolder, new RawScoreParser(titles, romsSkipTitlesCheck));
   }
 
-  private NVRamPinemhiParser(RawScoreParser rawScoreParser) {
+  private NVRamPinemhiParser(File pinemhiFolder, RawScoreParser rawScoreParser) {
     this.rawScoreParser = rawScoreParser;
+    this.pinemhiFolder = pinemhiFolder;
 
     //adapters.add(new SinglePlayerScoreAdapter("algar_l1.nv", 1));
     //adapters.add(new SinglePlayerScoreAdapter("alienstr.nv", 1));

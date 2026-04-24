@@ -1,7 +1,6 @@
 package net.nvrams.mapping;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,7 +17,7 @@ public class NVRamPinemhiParserTest {
 
   @Test
   public void testPinemhiExtract() throws IOException {
-    NVRamPinemhiParser parser = new NVRamPinemhiParser();
+    NVRamPinemhiParser parser = new NVRamPinemhiParser(new File("resources/pinemhi/"));
 
     String rom = "bcats_l5";
     File nvram = new File("nvrams", rom + ".nv");
@@ -30,7 +29,7 @@ public class NVRamPinemhiParserTest {
 
   @Test
   public void testPinemhiScores() throws IOException {
-    NVRamPinemhiParser parser = new NVRamPinemhiParser();
+    NVRamPinemhiParser parser = new NVRamPinemhiParser(new File("resources/pinemhi/"));
 
     String rom = "bcats_l5";
     File nvram = new File("nvrams", rom + ".nv");

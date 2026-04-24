@@ -23,7 +23,7 @@ public class NVRamParserCompareTool {
     Map<String, String> clones = VPXUtil.getClones(mameFolder);
 
     NVRamMapParser parser = new NVRamMapParser(new File("maps"));
-    NVRamPinemhiParser pinemhi = new NVRamPinemhiParser();
+    NVRamPinemhiParser pinemhi = new NVRamPinemhiParser(new File("resources/pinemhi/"));
     NVRamSuperhacParser superhac = new NVRamSuperhacParser();
 
     File nvramsFolder = new File("nvrams");
