@@ -29,7 +29,7 @@ public class NVRamMapParserTest {
 
   public static final String TEST_ROOT = "https://github.com/tomlogic/py-pinmame-nvmaps/raw/refs/heads/main/test/";
 
-  /** @fixme commented as a bit long... */
+  /** TODO commented as a bit long... */
   //@Test
   public void testAllDump() throws IOException {
     NVRamMapParser parser = new NVRamMapParser();

@@ -19,13 +19,21 @@ public class NVRamToolDumpTest {
 
   @Test
   public void testDumpAlpok() throws IOException {
-    doTestDump("alpok_l6", "#1 ???   1.000.000\n");
+    doTestDump("alpok_l6", "1.000.000\n");
   }
 
   /** @fixme check how to limit nb of scores as buy-in scores are added at the moment */
-  //@Test
+  @Test
   public void testDumpAfm() throws IOException {
-    doTestDump("afm_113b", "");
+    doTestDump("afm_113b", "SLL   7.500.000.000\n" +
+            "BRE   7.000.000.000\n" +
+            "LFS   6.500.000.000\n" +
+            "RCF   6.000.000.000\n" +
+            "DTW   5.500.000.000\n" +
+            "DWF   5.000.000.000\n" +
+            "ASR   4.500.000.000\n" +
+            "BCM   4.000.000.000\n" +
+            "MOO   3.500.000.000\n");
   }
 
 

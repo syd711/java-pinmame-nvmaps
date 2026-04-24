@@ -21,43 +21,22 @@ class NVRamParserCompareTest {
 
   private NVRamParser pinemhi = new NVRamPinemhiParser();
 
-  private static final List<String> IGNORE_POSITIONS = List.of("");
- 
   @Test
   public void compareNVsWithMapParser() throws Exception {
-    doCompareNVs(new NVRamMapParser(), new String[] {
-        "bguns_la", "bop_l7", "bop_l8", "freddy", "rs_l6", "sc_091", "strlt_l1", "sttng_l7", "tf_180", "trek_201"
-    });
+    doCompareNVs(new NVRamMapParser(), 
+        new String[] {
+          "bguns_la", "bop_l7", "bop_l8", "rs_l6", "sc_091", "strlt_l1", "sttng_l7", "trek_201",
+          //needs updates in maps :
+          "acd_170", "andretti", "barbwire", "kissc", "rescu911", "sfight2" , "smanve_100", "twd_156", "vlcno_ax"
+        }, new String[] {
+          "abv106", "bsv103", "freddy", "gladiatr"
+        });
   }
 
   //@Test
   public void compareNVsWithSuperhacParser() throws Exception {
-    doCompareNVs( new NVRamSuperhacParser(), new String[] {});
+    doCompareNVs( new NVRamSuperhacParser(), new String[] {}, new String[] {});
   }
-
-  public void doCompareNVs(NVRamParser parser, String[] ignoreRoms) throws Exception {
-
-    // used in manual testing to skip first roms, should be null normally 
-    String firstRom = null;
-    boolean parseAll = false;
-
-    Locale loc = Locale.ENGLISH;
-    List<String> errors = new ArrayList<>();
-    File testFolder = new File("nvrams");
-    for (File entry : testFolder.listFiles()) {
-      String rom = entry.getName().replace(".nv", "").toLowerCase();
-
-      if ((firstRom==null || firstRom.compareTo(rom) <= 0) && pinemhi.isSupportedRom(rom) && parser.isSupportedRom(rom)) {
-        if (!doCompare(rom, entry, parser, parseAll, false, loc)) {
-          if (!ArrayUtils.contains(ignoreRoms, rom)) {
-            errors.add(rom);
-          }
-        }
-      }
-    }
-    assertEquals(0, errors.size(), "roms in error: " + String.join(", ", errors));
-  }
-
 
   @Test
   public void compareNV() throws Exception {
@@ -106,10 +85,40 @@ class NVRamParserCompareTest {
     File entry = new File(testFolder, rom + ".nv");
 
     Locale loc = Locale.ENGLISH;
-    doCompare(rom, entry, parser, parseAll, true, loc);
+    doCompare(rom, entry, parser, parseAll, true, false, loc);
   }
 
-  private boolean doCompare(String rom, File entry, NVRamParser parser, boolean parseAll, boolean useAssert, Locale loc) throws IOException {
+  //---------------------
+
+  public void doCompareNVs(NVRamParser parser, String[] ignoreRoms, String[] ignorePositions) throws Exception {
+
+    // used in manual testing to skip first roms, should be null normally 
+    String firstRom = null;
+    boolean parseAll = false;
+
+    Locale loc = Locale.ENGLISH;
+    List<String> errors = new ArrayList<>();
+    File testFolder = new File("nvrams");
+    for (File entry : testFolder.listFiles()) {
+      String rom = entry.getName().replace(".nv", "").toLowerCase();
+
+      if ((firstRom==null || firstRom.compareTo(rom) <= 0) && pinemhi.isSupportedRom(rom) && parser.isSupportedRom(rom)) {
+        if (!doCompare(rom, entry, parser, parseAll, false, false, loc)) {
+          if (!doCompare(rom, entry, parser, parseAll, false, true, loc)) {
+            if (!ArrayUtils.contains(ignoreRoms, rom)) {
+              errors.add(rom);
+            }
+          }
+          else if (!ArrayUtils.contains(ignorePositions, rom)) {
+            errors.add("<>" + rom);
+          }
+        }
+      }
+    }
+    assertEquals(0, errors.size(), "roms in error: " + String.join(", ", errors));
+  }
+
+  private boolean doCompare(String rom, File entry, NVRamParser parser, boolean parseAll, boolean useAssert, boolean ignorePosition, Locale loc) throws IOException {
     System.out.println("Checking " + rom);
 
     List<NVRamScore> scoresPinemhi = pinemhi.parseNvRam(rom, entry, loc, parseAll);
@@ -119,7 +128,7 @@ class NVRamParserCompareTest {
     String rawMap = String.join("\n", raw);
 
     List<NVRamScore> scoresMap = parser.parseNvRam(rom, entry, loc, parseAll);
-    if (!checkScores(rom, scoresPinemhi, rawPinemhi, scoresMap, rawMap, useAssert)) {
+    if (!checkScores(rom, scoresPinemhi, rawPinemhi, scoresMap, rawMap, useAssert, ignorePosition)) {
       System.out.println(" => Error");
       System.out.println(" ---------------------------");
       return false;
@@ -127,7 +136,7 @@ class NVRamParserCompareTest {
 
     // same with RawScoreParser
     List<NVRamScore> scoresMap2 = parser.parseRaw(rom, raw, loc, parseAll);
-    if (!checkScores(rom, scoresPinemhi, rawPinemhi, scoresMap2, rawMap, useAssert)) {
+    if (!checkScores(rom, scoresPinemhi, rawPinemhi, scoresMap2, rawMap, useAssert, ignorePosition)) {
       System.out.println(" => Error");
       System.out.println(" ---------------------------");
       return false;
@@ -136,12 +145,12 @@ class NVRamParserCompareTest {
     return true;
   }
 
-  private boolean checkScores(String rom, List<NVRamScore> scoresPinemhi, String rawPinemhi, List<NVRamScore> scoresMap, String rawMap, boolean useAssert) {
+  private boolean checkScores(String rom, List<NVRamScore> scoresPinemhi, String rawPinemhi, List<NVRamScore> scoresMap, String rawMap, boolean useAssert, boolean ignorePosition) {
     if (scoresPinemhi.size() == scoresMap.size()) {
       for (int i = 0; i < scoresPinemhi.size(); i++) {
         NVRamScore scorePinemhi = scoresPinemhi.get(i);
         NVRamScore scoreMap = scoresMap.get(i);
-        if (!checkScore(rom, scoreMap, scorePinemhi)) {
+        if (!checkScore(rom, scoreMap, scorePinemhi, ignorePosition)) {
           System.out.println(rawPinemhi);
           System.out.println("-----------------");
           System.out.println(rawMap);
@@ -168,9 +177,9 @@ class NVRamParserCompareTest {
     return true;
   }
 
-  private boolean checkScore(String rom, NVRamScore score1, NVRamScore score2) {
+  private boolean checkScore(String rom, NVRamScore score1, NVRamScore score2, boolean ignorePosition) {
     return score1.getPlayerInitials().equalsIgnoreCase(score2.getPlayerInitials())
-        && (IGNORE_POSITIONS.contains(rom) ? true : score1.getPosition() == score2.getPosition())
+        && (ignorePosition ? true : score1.getPosition() == score2.getPosition())
         && (score1.getScore() != null ? score1.getScore().equals(score2.getScore()) : true)
         && (score1.getScoreText() != null ? score1.getScoreText().equals(score2.getScoreText()) : true);
   }

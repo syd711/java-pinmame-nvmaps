@@ -25,7 +25,7 @@ public class NVRamToolDump {
    */
   public String dump(NVRamMap mapJson, SparseMemory memory, Locale locale, boolean verifyChecksums) throws IOException {
     Appendable bld = new StringBuilder(3000);
-    printLine(bld, "Using map ../maps/" + mapJson.getMapPath() + " for " + mapJson.getRom() + ".nv");
+    printLine(bld, "Using " + mapJson.getMapPath() + " for " + mapJson.getRom() + ".nv");
     printLine(bld, "Dumping known entries for " + mapJson.getRom() + ".nv [" + mapJson.getRomName() + "]...");
 
     // audits and adjustments
@@ -152,8 +152,20 @@ public class NVRamToolDump {
       printGroupName(bld, group);
 
       for (NVRamScoreMapping score : scores) {
-        String value = score.formatHighScore(memory, locale);
-        printLine(bld, value);
+        String value = "";
+        if (StringUtils.isNotEmpty(score.getLabel())) {
+          value += score.getLabel() + ": ";
+        }
+        String initials = score.getInitials(memory);
+        if (StringUtils.isNotEmpty(initials)) {
+          value += initials + " ";
+        }
+        String val = score.formatValue(memory, locale);
+        if (StringUtils.isNotEmpty(val)) {
+          value += val;
+        }
+
+        printLine(bld, value.trim());
       }
     }
   }
