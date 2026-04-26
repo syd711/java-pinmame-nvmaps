@@ -24,7 +24,7 @@ class NVRamParsersTest {
 
   private NVRamParser mapParser = new NVRamMapParser(new File("C:\\Github\\pinmame-nvram-maps"));
   private NVRamParser superhacParser = new NVRamSuperhacParser();
-  private NVRamParser pinemhiParser = new NVRamPinemhiParser(new File("resources/pinemhi/"));
+  private NVRamParser pinemhiParser = new NVRamPinemhiParser("resources/pinemhi/");
 
 
   @Test

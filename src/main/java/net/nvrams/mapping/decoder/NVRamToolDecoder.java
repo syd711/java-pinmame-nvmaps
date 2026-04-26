@@ -418,7 +418,7 @@ public class NVRamToolDecoder {
 
     // load pinhemi and parse scores
     Locale locale = Locale.GERMAN;
-    NVRamPinemhiParser pinemhiParser = new NVRamPinemhiParser(new File("resources/pinemhi/"));
+    NVRamPinemhiParser pinemhiParser = new NVRamPinemhiParser("resources/pinemhi/");
     try {
       if (displayResult) {
         List<String> raw = pinemhiParser.getRaw(rom, nvramFile, locale);
