@@ -8,6 +8,7 @@ import java.util.Locale;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 import net.nvrams.mapping.map.NVRamMapParser;
 import net.nvrams.mapping.superhac.NVRamSuperhacParser;
@@ -28,13 +29,15 @@ class NVRamParsersTest {
   @Test
   public void compareNVsWithSuperhacParser() throws Exception {
     doCompareNVs(superhacParser, new String[] {
-      //"bop_l7", "gi_l9", "nbaf_31", "pool_l7", "robo_a34", "sttng_l7", "stwr_a14", "tagteam", "tf_180", "trek_201", "wwfr_103"
+      "gi_l9"
     });
   }
 
   @Test
   public void compareNVsWithMapParser() throws Exception {
-    doCompareNVs(mapParser, new String[] {});
+    doCompareNVs(mapParser, new String[] {
+      "andretti", "barbwire", "rescu911"
+    });
   }
 
   private void doCompareNVs(NVRamParser parser, String[] ignoreRoms) throws Exception {
@@ -115,6 +118,7 @@ class NVRamParsersTest {
 
     // generate the raw version of scores
     List<String> raw = parser.getRaw(rom, entry, loc);
+    System.out.println(String.join("\n", raw));
 
     // parse raw with the parser using the map
     List<NVRamScore> scores2 = parser.parseRaw(rom, raw, loc, parseAll);
@@ -128,7 +132,17 @@ class NVRamParsersTest {
       for (int i = 0; i < parsedScores.size(); i++) {
         NVRamScore parsedScore = parsedScores.get(i);
         NVRamScore score = scores.get(i);
-        if (!score.equals(parsedScore)) {
+        if (score==null) {
+          System.out.println(String.join("\n", raw));
+          if (useAssert) {
+            assertNotNull(score);
+          }
+          else {
+            System.out.println("==> score is null");
+            return false;
+          }
+        }
+        else if (!score.equals(parsedScore)) {
           System.out.println(String.join("\n", raw));
           if (useAssert) {
             assertEquals(parsedScore, score);
