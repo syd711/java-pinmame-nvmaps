@@ -29,11 +29,13 @@ public class NVRamMapParserTest {
 
   public static final String TEST_ROOT = "https://github.com/tomlogic/py-pinmame-nvmaps/raw/refs/heads/main/test/";
 
+  private NVRamMapParser parser = new NVRamMapParser("resources/maps");
+
+
   /** TODO commented as a bit long... */
   //@Test
   public void testAllDump() throws IOException {
-    NVRamMapParser parser = new NVRamMapParser();
-    File indexJson = new File(parser.mapFolder, "index.json");
+    File indexJson = new File(parser.getMapFolder(), "index.json");
 
     // optional ROM, to start with, leave null for all
     String romStart = null; //"t2_l8";
@@ -51,7 +53,6 @@ public class NVRamMapParserTest {
 
   @Test
   public void testOneDump() throws IOException {
-    NVRamMapParser parser = new NVRamMapParser();
     checkRom(parser, "t2_l8", true);
   }
 
@@ -91,7 +92,6 @@ public class NVRamMapParserTest {
   public void testDumpPlayerCount() throws IOException {
     String rom = "bcats_l5";
 
-    NVRamMapParser parser = new NVRamMapParser();
     parseNVRam(parser, rom, (mapJson, memory) -> {
         NVRamMapping m = mapJson.getGameState().getPlayerCount();
         String e = m.formatEntry(memory, Locale.ENGLISH);

@@ -10,38 +10,31 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import net.nvrams.mapping.map.NVRamMapParser;
-import net.nvrams.mapping.pinemhi.NVRamPinemhiParser;
 import net.nvrams.mapping.superhac.NVRamSuperhacParser;
 
 /**
  * A test of NVRamParsers
- * It takes a NVRam, generate a raw and parse it with the DefaultAdapter
+ * It takes a NVRam, parse scores directly, generate raw, parse scores from raw and compare
  * 
  */
 class NVRamParsersTest {
 
-  private RawScoreParser rawParser = RawScoreParserConf.createParser();
+  private NVRamParser mapParser = new NVRamMapParser("resources/maps");
+  private NVRamParser superhacParser = new NVRamSuperhacParser("resources/superhac/roms.json");
 
-  private NVRamParser mapParser = new NVRamMapParser(new File("C:\\Github\\pinmame-nvram-maps"));
-  private NVRamParser superhacParser = new NVRamSuperhacParser();
-  private NVRamParser pinemhiParser = new NVRamPinemhiParser("resources/pinemhi/");
-
+  // not needed to test pinemhi parser as parseNvRam() is equivalent to getRaw() + parseRaw()
+  //private NVRamParser pinemhiParser = new NVRamPinemhiParser("resources/pinemhi/");
 
   @Test
   public void compareNVsWithSuperhacParser() throws Exception {
     doCompareNVs(superhacParser, new String[] {
-      "bop_l7", "gi_l9", "nbaf_31", "pool_l7", "robo_a34", "sttng_l7", "stwr_a14", "tagteam", "tf_180", "trek_201", "wwfr_103"
+      //"bop_l7", "gi_l9", "nbaf_31", "pool_l7", "robo_a34", "sttng_l7", "stwr_a14", "tagteam", "tf_180", "trek_201", "wwfr_103"
     });
   }
 
   @Test
   public void compareNVsWithMapParser() throws Exception {
     doCompareNVs(mapParser, new String[] {});
-  }
-
-  @Test
-  public void compareNVsWithPinemhiParser() throws Exception {
-    doCompareNVs(pinemhiParser, new String[] {});
   }
 
   private void doCompareNVs(NVRamParser parser, String[] ignoreRoms) throws Exception {
@@ -59,12 +52,12 @@ class NVRamParsersTest {
 
       if ((firstRom==null || firstRom.compareTo(rom) <= 0) && parser.isSupportedRom(rom)) {
 
-        List<NVRamScore> scoresMap = parser.parseNvRam(rom, entry, loc, parseAll);
+        List<NVRamScore> scores1 = parser.parseNvRam(rom, entry, loc, parseAll);
 
         List<String> raw = parser.getRaw(rom, entry, loc);
-        List<NVRamScore> scores = rawParser.getScores(rom, raw, parseAll);
+        List<NVRamScore> scores2 = parser.parseRaw(rom, raw, loc, parseAll);
 
-        if (!checkScores(rom, raw, scoresMap, scores, false)) {
+        if (!checkScores(rom, raw, scores1, scores2, false)) {
           if (!ArrayUtils.contains(ignoreRoms, rom)) {
             errors.add(rom);
           }
@@ -77,9 +70,9 @@ class NVRamParsersTest {
   @Test
   public void compareNV() throws Exception {
 
-    NVRamParser parser =  superhacParser;
+    NVRamParser parser =  mapParser;
 
-    String rom = "acd_170h";
+    String rom = "tf_180";
     boolean parseAll = false;
     /*
 
@@ -118,20 +111,14 @@ class NVRamParsersTest {
     Locale loc = Locale.ENGLISH;
 
     // Get scores from the map and nv directly (except pinemhi, does not use raw string)
-    List<NVRamScore> scoresMap = parser.parseNvRam(rom, entry, loc, parseAll);
+    List<NVRamScore> scores1 = parser.parseNvRam(rom, entry, loc, parseAll);
 
     // generate the raw version of scores
     List<String> raw = parser.getRaw(rom, entry, loc);
 
-    // parse raw with generic RawScoreParser
-    List<NVRamScore> scores = rawParser.getScores(rom, raw, parseAll);
-    checkScores(rom, raw, scoresMap, scores, true);
-
-    // parse raw with the parser using the map (for pinemhi, this is exactly same as above, so bypass)
-    if (parser != pinemhiParser) {
-      List<NVRamScore> scores2 = parser.parseRaw(rom, raw, loc, parseAll);
-      checkScores(rom, raw, scoresMap, scores2, true);
-    }
+    // parse raw with the parser using the map
+    List<NVRamScore> scores2 = parser.parseRaw(rom, raw, loc, parseAll);
+    checkScores(rom, raw, scores1, scores2, true);
   }
 
   private boolean checkScores(String rom, List<String> raw, List<NVRamScore> parsedScores, List<NVRamScore> scores, boolean useAssert) {

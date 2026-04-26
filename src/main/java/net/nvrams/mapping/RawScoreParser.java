@@ -87,21 +87,6 @@ public class RawScoreParser {
         currentScore.setSuffix(currentSuffix);
       }
 
-      // E.g. Transformers has a separate highscore list for Autobots and Decepticons, combines all scores into one list
-      if (StringUtils.equals(rom, "tf_180")) {
-        // keep only first 10 items
-        if (scores.size() > 10) {
-          scores = scores.subList(0, 10);
-        }
-        scores.sort((a, b) -> Long.compare(b.getScore(), a.getScore()));
-        int i = 1;
-        for (NVRamScore score : scores) {
-          //score.setPosition(i++);
-        }
-      }
-
-      //OLE removed
-      //return filterDuplicates(scores);
       return scores;
     }
     catch (Exception e) {
@@ -212,7 +197,7 @@ public class RawScoreParser {
     List<NVRamScore> scoreList = new ArrayList<>();
     int pos = 1;
     for (NVRamScore s : scores) {
-      Optional<NVRamScore> match = scoreList.stream().filter(score -> score.getFormattedScore().equals(s.getFormattedScore()) && String.valueOf(score.getPlayerInitials()).equals(s.getPlayerInitials())).findFirst();
+      Optional<NVRamScore> match = scoreList.stream().filter(score -> score.getScore() == s.getScore() && StringUtils.equals(score.getInitials(), s.getInitials())).findFirst();
       if (match.isPresent()) {
         continue;
       }

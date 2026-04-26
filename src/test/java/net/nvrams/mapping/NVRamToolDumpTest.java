@@ -43,7 +43,7 @@ public class NVRamToolDumpTest {
     File entry = new File(mainFolder, rom + ".nv");
     byte[] bytes = Files.readAllBytes(entry.toPath());
 
-    NVRamMapParser parser = new NVRamMapParser();
+    NVRamMapParser parser = new NVRamMapParser("resources/maps");
     NVRamMap mapJson = parser.getMap(rom);
     SparseMemory memory = parser.getMemory(mapJson, bytes);
 
