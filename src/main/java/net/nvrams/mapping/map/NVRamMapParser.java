@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -105,14 +106,23 @@ public class NVRamMapParser implements NVRamParser {
         
         if (parseAll || filter(lbl)) {
           NVRamScore sc = NvRamScoreDecoders.decodeScore(rom, scoreDef, currentLabel, memory);
-          if (allOnes || countByTitle.get(currentLabel) > 1) {
+          if (sc != null && (allOnes || countByTitle.get(currentLabel) > 1)) {
             sc.setPosition(position++);
           }
-          scores.add(sc);
+          if (sc != null && !containsScore(scores, sc)) {
+            scores.add(sc);
+          }
         }
       }
     }
     return scores;
+  }
+
+  private boolean containsScore(List<NVRamScore> scores, NVRamScore sc) {
+    if (sc.getScore() == 0 || StringUtils.isEmpty(sc.getInitials())) {
+      return false;
+    }
+    return scores.stream().anyMatch(score -> Objects.equals(score.getScore(), sc.getScore()) && StringUtils.equals(score.getInitials(), sc.getInitials()));
   }
 
   //------------
@@ -154,7 +164,9 @@ public class NVRamMapParser implements NVRamParser {
         if (parseAll || filter(lbl)) {
           // turn line in score
           NVRamScore sc = NVRamScore.fromRaw(line, currentLabel, locale);
-          scores.add(sc);
+          if (sc != null && !containsScore(scores, sc)) {
+            scores.add(sc);
+          }
         }
       }
     }

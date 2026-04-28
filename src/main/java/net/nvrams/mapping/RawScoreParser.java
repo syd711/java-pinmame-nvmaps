@@ -3,7 +3,6 @@ package net.nvrams.mapping;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -86,6 +85,10 @@ public class RawScoreParser {
       if (currentSuffix != null && currentScore != null) {
         currentScore.setSuffix(currentSuffix);
       }
+      // when there is only one score that has been ignored, return it
+      if (scores.isEmpty() && currentScore != null) {
+        scores.add(currentScore);
+      }
 
       return scores;
     }
@@ -98,7 +101,7 @@ public class RawScoreParser {
   //-------------------------
 
   private static final String _patternIndex = "(\\d+\\)|#\\d+|\\d+#|\\d+,|\\d+\\.:) +";
-  private static final String _patternScore = "([ ?/+\\-a-zA-Z0-9\u0000]{3,}\\s+)?(?:[-|]?\\s+)?(\\d\\d?\\d?(?:[.,?\u00a0\u202f\ufffd\u00ff]?\\d\\d\\d)*(?:\\.\\d)?)((?:\\s\\d+)?[\\-\\sa-zA-Z]*)$";
+  private static final String _patternScore = "([ ?/+\\-a-zA-Z0-9\u0000]{3,}\\s+)?(?:[-|$]?\\s+)?(\\d\\d?\\d?(?:[.,?\u00a0\u202f\ufffd\u00ff]?\\d\\d\\d)*(?:\\.\\d)?)((?:\\s\\d+)?[\\-\\sa-zA-Z]*)$";
 
   private static final Pattern patternScoreLine = Pattern.compile("^" + _patternIndex + _patternScore);
   private static final Pattern patternScoreTitle = Pattern.compile("^" + _patternScore);
@@ -191,20 +194,5 @@ public class RawScoreParser {
         .replace("\u202f", "")
         .replace("\ufffd", "")
         .replace(" ", "");
-  }
-
-  protected List<NVRamScore> filterDuplicates(List<NVRamScore> scores) {
-    List<NVRamScore> scoreList = new ArrayList<>();
-    int pos = 1;
-    for (NVRamScore s : scores) {
-      Optional<NVRamScore> match = scoreList.stream().filter(score -> score.getScore() == s.getScore() && StringUtils.equals(score.getInitials(), s.getInitials())).findFirst();
-      if (match.isPresent()) {
-        continue;
-      }
-      s.setPosition(pos);
-      scoreList.add(s);
-      pos++;
-    }
-    return scoreList;
   }
 }

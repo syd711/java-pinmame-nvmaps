@@ -12,6 +12,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 
 import org.apache.commons.configuration2.INIConfiguration;
@@ -115,11 +116,9 @@ public class NVRamPinemhiParser implements NVRamParser {
       for (NVRamScore score : scores) {
         score.setPosition(i++);
       }
-      //OLE removed
-      //return filterDuplicates(scores);
     }
 
-    return scores;
+    return filterDuplicates(scores);
   }
 
 
@@ -147,6 +146,20 @@ public class NVRamPinemhiParser implements NVRamParser {
     }
     return lines;
   }
+
+  protected List<NVRamScore> filterDuplicates(List<NVRamScore> scores) {
+    List<NVRamScore> scoreList = new ArrayList<>();
+    for (NVRamScore s : scores) {
+      if (s.getScore() != 0 && StringUtils.isNotEmpty(s.getInitials())) {
+        if (scoreList.stream().anyMatch(score -> Objects.equals(score.getScore(), s.getScore()) && StringUtils.equals(score.getInitials(), s.getInitials()))) {
+          continue;
+        }
+      }
+      scoreList.add(s);
+    }
+    return scoreList;
+  }
+
 
   @Nullable
   public List<String> executePINemHi(@NonNull File originalNVRamFile) throws IOException {

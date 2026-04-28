@@ -28,7 +28,7 @@ class NVRamParserCompareTest {
   public void compareNVsWithMapParser() throws Exception {
     doCompareNVs(mapParser, 
         new String[] {
-          "bguns_la", "bop_l7", "bop_l8", "rs_l6", "sc_091", "strlt_l1", "sttng_l7", "trek_201",
+          "bguns_la", "rs_l6", "sc_091", "strlt_l1", "sttng_l7", "trek_201",
           //needs updates in maps :
           "acd_170", "andretti", "barbwire", "kissc", "rescu911", "sfight2" , "smanve_100", "twd_156", "vlcno_ax"
         }, new String[] {
@@ -48,8 +48,8 @@ class NVRamParserCompareTest {
   public void compareNV() throws Exception {
 
     NVRamParser parser = mapParser;
-    String rom = "tf_180";
-    boolean ignorePosition = true;
+    String rom = "whirl_l3";
+    boolean ignorePosition = false;
     boolean parseAll = false;
 
 

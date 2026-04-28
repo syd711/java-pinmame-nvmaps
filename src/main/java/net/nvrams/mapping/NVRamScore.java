@@ -137,16 +137,15 @@ public class NVRamScore {
   }
 
   public String toRaw(Locale loc) {
-    if (rawScore != null) {
-      return rawScore;
-    }
-    // else
-    String paddedInitials = StringUtils.rightPad(initials, 3);
-    String disp = (position > 0 ? position + ") " : "") + paddedInitials + "   " + getFormattedScore(loc) + (suffix != null? " " + suffix : "");
+    String disp = (position > 0 ? "#" + position + " ": "") 
+          + StringUtils.rightPad(initials, 3) 
+          + "   " 
+          + getFormattedScore(loc) 
+          + (suffix != null? " " + suffix : "");
     return disp.trim();
   }
 
-  private static final String _patternScore = "((\\d+)\\)\\s)?([ ?/+\\-a-zA-Z0-9]{3,}\\s+)?(\\d\\d?\\d?(?:[.,\\u00a0\\u202f\\ufffd\\u00ff]?\\d\\d\\d)*(?:\\.\\d)?)((?:\\s\\d+)?[\\-\\sa-zA-Z]*)$";
+  private static final String _patternScore = "(#(\\d+)\\s)?([ ?/+\\-a-zA-Z0-9]{3,}\\s+)?(\\d\\d?\\d?(?:[.,\\u00a0\\u202f\\ufffd\\u00ff]?\\d\\d\\d)*(?:\\.\\d)?)((?:\\s\\d+)?[\\-\\sa-zA-Z]*)$";
   private static final Pattern patternScoreTitle = Pattern.compile("^" + _patternScore);
 
   public static NVRamScore fromRaw(String line, String title, Locale locale) {

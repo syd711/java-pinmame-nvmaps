@@ -36,7 +36,7 @@ class NVRamParsersTest {
   @Test
   public void compareNVsWithMapParser() throws Exception {
     doCompareNVs(mapParser, new String[] {
-      "andretti", "barbwire", "rescu911"
+      "barbwire", "rescu911"
     });
   }
 
@@ -45,6 +45,7 @@ class NVRamParsersTest {
     Locale loc = Locale.ENGLISH;
 
     List<String> errors = new ArrayList<>();
+    List<String> ignoredRomsInError = new ArrayList<>();
     // used in manual testing to skip first roms, should be null normally 
     String firstRom = null;
     boolean parseAll = false;
@@ -61,12 +62,16 @@ class NVRamParsersTest {
         List<NVRamScore> scores2 = parser.parseRaw(rom, raw, loc, parseAll);
 
         if (!checkScores(rom, raw, scores1, scores2, false)) {
-          if (!ArrayUtils.contains(ignoreRoms, rom)) {
+          if (ArrayUtils.contains(ignoreRoms, rom)) {
+            ignoredRomsInError.add(rom);
+          }
+          else {
             errors.add(rom);
           }
         }
       }
     }
+    System.out.println("the following ignored roms are still in error : "+ String.join(", ", ignoredRomsInError));
     assertEquals(0, errors.size(), "roms in error: " + String.join(", ", errors));
   }
 
@@ -75,16 +80,13 @@ class NVRamParsersTest {
 
     NVRamParser parser =  mapParser;
 
-    String rom = "tf_180";
+    String rom = "andretti";
     boolean parseAll = false;
     /*
 
     //----------------------------
 
-
     SUPERHAC PARSER ISSUES
-
-  
 
     gi_l9 => decalage ?
     gnr_300
