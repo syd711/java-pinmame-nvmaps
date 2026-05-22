@@ -1,12 +1,13 @@
 package net.nvrams.mapping.map;
 
+import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonSetter;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.fasterxml.jackson.annotation.JsonAnySetter;
-import com.fasterxml.jackson.annotation.JsonSetter;
 
 /**
  * A collection of memory areas used during a game to store the state of the game (e.g., player #, ball #, 

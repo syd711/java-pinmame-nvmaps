@@ -15,7 +15,6 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
@@ -272,25 +271,25 @@ public class NVRamToolDecoder {
         if (sc.hasInitials()) {
           initials = searchString(bytes, sc.getInitials());
           // remove initials positions that conflict with previously selected SearchResult
-          CollectionUtils.filter(initials, p -> {
+          initials.removeIf(p -> {
             for (int i = 0; i < 3; i++) {
               if (used[p + i]) {
-                return false;
+                return true;
               }
             }
-            return true;
+            return false;
           });
         }
 
         List<SearchResult> positions = searchNumber(bytes, sc.getScore(), forcedScoreLength, MAX_LENGTH, true);
         // remove positions that conflict with previously selected SearchResult
-        CollectionUtils.filter(positions, p -> {
+        positions.removeIf(p -> {
           for (int i = 0; i < p.scoreLength; i++) {
             if (used[p.scorePosition + i]) {
-              return false;
+              return true;
             }
           }
-          return true;
+          return false;
         });
 
         final NVRamScore _previousScore = previousScore;

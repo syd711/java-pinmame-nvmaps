@@ -13,14 +13,13 @@ import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import net.nvrams.mapping.map.NVRamMap;
 import net.nvrams.mapping.map.NVRamMapParser;
 import net.nvrams.mapping.map.NVRamMapping;
 import net.nvrams.mapping.map.SparseMemory;
 import net.nvrams.mapping.tools.NVRamToolDump;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  * Uses test data from https://github.com/tomlogic/py-pinmame-nvmaps

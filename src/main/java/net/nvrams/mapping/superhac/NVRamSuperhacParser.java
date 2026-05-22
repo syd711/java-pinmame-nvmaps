@@ -15,11 +15,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import net.nvrams.mapping.NVRamParser;
 import net.nvrams.mapping.NVRamScore;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 /**
  *

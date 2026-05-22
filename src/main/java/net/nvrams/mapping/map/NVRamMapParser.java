@@ -1,5 +1,16 @@
 package net.nvrams.mapping.map;
 
+import net.nvrams.mapping.NVRamParser;
+import net.nvrams.mapping.NVRamScore;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
+import org.springframework.stereotype.Service;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -7,31 +18,9 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.lang.NonNull;
-import org.springframework.stereotype.Service;
-
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import net.nvrams.mapping.NVRamParser;
-import net.nvrams.mapping.NVRamScore;
 
 /**
  * Main class for parsing PinMAME .nv files using NVRAM maps.
